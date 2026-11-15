@@ -1,0 +1,30 @@
+# Gymnasium Putzbrunn – Open World
+
+Inhalt:
+- `index.html` – das komplette Spiel in einer Datei (3D-Engine und Gebäudedaten sind eingebettet, es wird nichts von fremden Servern nachgeladen).
+- `server.js` + `package.json` – kleiner Mehrspieler-Server (Node.js ab Version 18).
+
+## Mehrspieler online (für Schülerinnen und Schüler ohne Claude-Konto)
+Das Spiel braucht dafür einen Dienst, der Node.js ausführt und WebSockets erlaubt:
+1. Diesen Ordner in ein (privates) GitHub-Repository laden.
+2. Bei einem Node-Hoster (z. B. Render, Railway, Fly.io oder ein Schul-/Sachaufwandsträger-Server) einen "Web Service" aus dem Repository anlegen.
+   Build-Befehl: `npm install` – Start-Befehl: `npm start`. Der Port kommt automatisch aus der Variable `PORT`.
+3. Die Adresse des Dienstes an die Klasse geben. Alle, die sie öffnen, sind in derselben Welt.
+
+Lokal testen: `npm install && npm start`, dann http://localhost:3000 in zwei Browserfenstern öffnen.
+
+## Nur Einzelspieler
+`index.html` allein genügt (z. B. auf GitHub Pages oder per Doppelklick). Ohne Server zeigt das Spiel "Solo-Modus".
+
+## Datenschutz
+Der Server speichert nichts dauerhaft. Übertragen werden nur Spitzname, Pulli-Farbe, Position, Punktestand. Es gibt keinen Chat.
+Bitte die Klasse anweisen, Fantasienamen zu verwenden. Vor dem Einsatz mit Schülern Hoster-Standort und Schulvorgaben prüfen.
+
+## Neu: Schulalltag und Außenanlagen
+
+- Tasten: **E** ansprechen/kaufen/ausleihen/klettern/Müll aufheben, **Leertaste** springen, **B** Tasche. Am Handy: Knöpfe „Aktion“ und „Sprung“.
+- Takt: 2 Minuten Pause, 4 Minuten Unterricht, dann Gong. Der Takt hängt an der Uhrzeit und ist deshalb bei allen Spielenden gleich.
+- Die rund 470 Figuren (Schülerinnen und Schüler, Lehrkräfte, Sekretariat, Pausenverkauf, Bibliothek, Hausmeister) rechnet jedes Gerät selbst. Sie werden nicht über den Server abgeglichen; zwei Spielende sehen also dieselbe Pause, aber nicht dieselbe Figur an derselben Stelle.
+- Außenanlagen nach dem Lageplan „Grundriss EG mit Außenanlagen“: Laufbahn, Beachfelder, Hartplatz, Rasenspielfeld, Allwetterplatz, Weitsprung, Calisthenics, Grünes Klassenzimmer, Fahrradständer, Parkplatz, Tiefgaragenrampe. Die Maße sind aus dem Bild abgegriffen, nicht aus Vektordaten.
+- server.js wurde ebenfalls geändert (Sprung- und Kletterhöhe werden weitergereicht). Bitte beide Dateien austauschen.
+- Gottmodus: Tasche öffnen (B), unten den Code GOTTMODUS eingeben. Geld, Energie, Taschenplatz und Ausleihe sind dann unbegrenzt; derselbe Code schaltet ihn wieder aus. Der Code steht als GODCODE im Quelltext von index.html und lässt sich dort ändern.
