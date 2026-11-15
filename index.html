@@ -155,6 +155,8 @@ function showErr(m){ const e=$('err'); e.style.display='block'; e.textContent='F
 let booted=false; window.addEventListener('error', e => { if(!booted) showErr(e.message||'unbekannt'); });
 if(!window.THREE || !WD){ showErr('Spieldaten konnten nicht geladen werden.'); return; }
 
+// in the real building chemistry shares the corridor with biology (OG1), physics is upstairs: swap the names, keep the rooms
+for(const f of WD.floors){ const sw=n=>n.startsWith('Chemie')?'Physik'+n.slice(6):n.startsWith('Physik')?'Chemie'+n.slice(6):n; for(const l of f.labels) l[0]=sw(l[0]); for(const r of f.rooms) r[0]=sw(r[0]); }
 // ================================================================ world data
 const C=WD.cell, GW=WD.W, GH=WD.H, LV=WD.levels, CE=WD.ceil, NF=WD.floors.length, G=WD.G, HALL_TOP=WD.hallTop;
 const WORLD_W=GW*C, WORLD_H=GH*C;
@@ -654,9 +656,9 @@ const pt=(x,z,name,txt)=>({f:G,x,z,name,txt});
 const MISSIONS=[
  {id:'start',t:'Erster Schultag',d:'Melde dich an und finde deinen Platz.',s:[['OG1','Sekretariat','Geh ins Sekretariat (OG1) und hol deinen Schülerausweis.'],['OG1','Schulleitung I','Stell dich kurz bei der Schulleitung vor.'],['OG1','Klassenzimmer','Such dir einen Platz in deinem Klassenzimmer.',2]]},
  {id:'buch',t:'Bücherwurm',d:'Die Bibliothek wartet.',s:[['EG','Bibliothek','Leih dir in der Bibliothek ein Buch aus.'],['EG','Silentium','Lies ein Kapitel im Silentium – leise!'],['OG1','Lehrmittelraum','Hol die Schulbücher aus dem Lehrmittelraum (OG1).']]},
- {id:'chemie',t:'Laborführerschein',d:'Sicher experimentieren in der Chemie.',s:[['OG2','Chemie Sammlung','Hol Schutzbrille und Kittel aus der Chemie-Sammlung (OG2).'],['OG2','Chemie Übung','Führe den Versuch im Übungsraum durch.'],['OG2','Chemie Fachraum','Gib dein Protokoll im Fachraum ab.']]},
+ {id:'chemie',t:'Laborführerschein',d:'Sicher experimentieren in der Chemie.',s:[['OG1','Chemie Sammlung','Hol Schutzbrille und Kittel aus der Chemie-Sammlung (OG1).'],['OG1','Chemie Übung','Führe den Versuch im Übungsraum durch.'],['OG1','Chemie Fachraum','Gib dein Protokoll im Fachraum ab.']]},
  {id:'bio',t:'Mikroskop-Kurier',d:'Vorsicht, zerbrechlich!',s:[['OG1','Biologie Sammlung','Hol das Mikroskop aus der Bio-Sammlung (OG1).'],['OG1','Biologie Übung','Bring es in den Übungsraum.'],['OG1','Biologie Fachraum','Zeig dein Präparat im Fachraum.']]},
- {id:'physik',t:'Stromkreis',d:'Bring die Lampe zum Leuchten.',s:[['OG1','Physik Sammlung','Hol Kabel und Batterie aus der Physik-Sammlung.'],['OG1','Physik Übung','Bau den Stromkreis im Übungsraum auf.'],['OG1','Physik Fachraum','Führe ihn im Fachraum vor.']]},
+ {id:'physik',t:'Stromkreis',d:'Bring die Lampe zum Leuchten.',s:[['OG2','Physik Sammlung','Hol Kabel und Batterie aus der Physik-Sammlung (OG2).'],['OG2','Physik Übung','Bau den Stromkreis im Übungsraum auf.'],['OG2','Physik Fachraum','Führe ihn im Fachraum vor.']]},
  {id:'pause',t:'Pausenhunger',d:'Eine Breze, bitte.',s:[['EG','Pausenverkauf','Kauf dir eine Breze am Pausenverkauf.'],['EG','Schülercafé','Iss sie gemütlich im Schülercafé.'],['EG','Speisenausgabe','Bring dein Tablett zur Speisenausgabe zurück.']]},
  {id:'musik',t:'Konzertprobe',d:'Gleich beginnt die Probe in der Aula.',s:[['EG','Musikraum I','Hol die Noten aus Musikraum I.'],['EG','Medientechnik','Hol ein Mikrofon aus der Medientechnik.'],['EG','Aula','Ab auf die Bühne in der Aula!']]},
  {id:'kunst',t:'Kunstausstellung',d:'Deine Bilder sollen alle sehen.',s:[['OG2','Kunstsaal 1','Hol dein Bild aus Kunstsaal 1 (OG2).'],['OG2','Werken / Kunst','Bau im Werkraum einen Rahmen dafür.'],['EG','Mehrzweckraum','Häng es im Mehrzweckraum (EG) auf.']]},
@@ -1049,7 +1051,7 @@ function guideTo(fi,name,nth){ const r=room(FN[fi],name,nth||0); if(!r) return; 
 function secretary(){ const T=schoolT(), opts=[];
   if(!save.ausweis) opts.push(['🪪 Schülerausweis abholen',()=>{ save.ausweis=1; persist(); toast('Du hast jetzt deinen Schülerausweis. Damit kannst du Bücher ausleihen.',2600); secretary(); },'','Nehmen']);
   if(myClass) opts.push(['🏫 Wo ist mein Klassenzimmer?',()=>{ closeDlg(); cur={id:'_nav',t:'Wegweiser',d:'',timed:0,steps:[{f:myClass.f,x:myClass.tp.x,z:myClass.tp.z,name:myClass.name,txt:'Dein Klassenzimmer der 7'+myClass.letter+' ('+FN[myClass.f]+').'}]}; curStep=0; updateMissionUI(); },'Klasse 7'+myClass.letter,'Zeigen']);
-  for(const [fi,nm,tx] of [[G,'Pausenverkauf','Pausenverkauf'],[G,'Bibliothek','Bibliothek'],[G,'Erste-Hilfe-Raum','Erste Hilfe'],[G,'Hausmeister','Hausmeister'],[2,'Schulleitung I','Schulleitung'],[2,'Beratungslehrer','Beratungslehrkraft'],[0,'Kletter- und Konditionsraum','Kletterwand'],[3,'Chemie Fachraum','Chemie']]) opts.push(['🧭 Weg: '+tx+' ('+FN[fi]+')',()=>{ closeDlg(); guideTo(fi,nm); },'','Zeigen']);
+  for(const [fi,nm,tx] of [[G,'Pausenverkauf','Pausenverkauf'],[G,'Bibliothek','Bibliothek'],[G,'Erste-Hilfe-Raum','Erste Hilfe'],[G,'Hausmeister','Hausmeister'],[2,'Schulleitung I','Schulleitung'],[2,'Beratungslehrer','Beratungslehrkraft'],[0,'Kletter- und Konditionsraum','Kletterwand'],[2,'Chemie Fachraum','Chemie']]) opts.push(['🧭 Weg: '+tx+' ('+FN[fi]+')',()=>{ closeDlg(); guideTo(fi,nm); },'','Zeigen']);
   opts.push(['🧣 Fundsachen',()=>{ dlg('Fundsachen','„In der Kiste liegen: eine Trinkflasche, ein einzelner Turnschuh (Größe 38), drei Mützen und ein Geodreieck. Vermisst du etwas davon?“',[['Nein, danke.',closeDlg,'','Zurück']]); },'','Ansehen']);
   opts.push(['🤒 Ich fühle mich nicht gut',()=>{ closeDlg(); guideTo(G,'Erste-Hilfe-Raum'); toast('„Leg dich kurz im Erste-Hilfe-Raum hin, ich sage deiner Lehrkraft Bescheid.“',3200); },'','Melden']);
   dlg('Sekretariat','„Grüß dich! Wie kann ich dir helfen?“ – '+(T.brk?'Gerade ist Pause.':'Es läuft die '+T.per+'. Stunde'+(myClass?': Die 7'+myClass.letter+' hat '+subjOf(myClass,T.per)+'.':'.')),opts); }
