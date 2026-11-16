@@ -31,3 +31,10 @@ Bitte die Klasse anweisen, Fantasienamen zu verwenden. Vor dem Einsatz mit Schü
 - Raumnamen und Raumnummern nach Plan Ü5.2142–45 (Stand 28.10.2026): am Raumschild, als Nummernschild vor den Türen, auf der Karte, in der Ortsanzeige und in den Missionen. Flure sind nicht nummeriert.
 - Fachräume Chemie und Biologie (OG1) und Physik (OG2) sind nach den Hohenloher-Plänen 2545624 A und 2545625 B möbliert: Lehrerexperimentiertisch, Schülerbänke in Reihen zur Projektionswand, Schrankzeile mit Spülen an der Flurwand, Medienbrücke unter der Decke, Sammlungen mit Schränken und Arbeitsinsel.
 - Das 2. Obergeschoss hat jetzt eigene Wände und Türen aus Plan 3.04 (vorher Hülle des 1. OG): Kursräume 2.42–2.51, Ausweichräume 2.52–2.56, Physik 2.37–2.41, Kunst 2.31–2.36 als sechs Räume.
+
+## Schulhaus-Rallye
+
+- Start über den Knopf „Rallye“ oder das Missionsmenü; Jahrgangsstufe 5 bis 13 wählen. Der Stundenplan mit sechs Stunden wird jedes Mal neu gewürfelt.
+- Direktstart per Link: an die Adresse `?rallye=7` anhängen (Zahl = Jahrgangsstufe).
+- Es gibt keine Zielmarkierung. „Hilfe“ blendet sie für die aktuelle Stunde ein und wird gezählt.
+- Lösungswörter zum Abhaken: 5 KREIDE · 6 FERIEN · 7 ZIRKEL · 8 GLOBUS · 9 TAFELN · 10 LINEAL · 11 FÜLLER · 12 ABITUR · 13 DIPLOM. Am Ende zeigt das Spiel Jahrgangsstufe, Zeit, Hilfen und Lösungswort.
