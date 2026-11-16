@@ -38,3 +38,9 @@ Bitte die Klasse anweisen, Fantasienamen zu verwenden. Vor dem Einsatz mit Schü
 - Direktstart per Link: an die Adresse `?rallye=7` anhängen (Zahl = Jahrgangsstufe).
 - Es gibt keine Zielmarkierung. „Hilfe“ blendet sie für die aktuelle Stunde ein und wird gezählt.
 - Lösungswörter zum Abhaken: 5 KREIDE · 6 FERIEN · 7 ZIRKEL · 8 GLOBUS · 9 TAFELN · 10 LINEAL · 11 FÜLLER · 12 ABITUR · 13 DIPLOM. Am Ende zeigt das Spiel Jahrgangsstufe, Zeit, Hilfen und Lösungswort.
+
+## Umzugs-Update (Standard) und Vollversion
+
+- Standard ist das Umzugs-Update: Der Flügel mit Verwaltung und Oberstufe samt Treppenhalle E.0/1.0/2.0 ist mit Bauzäunen abgesperrt, Start ist am Eingang Treppenraum II (TR E.2). Die Räume 1.27 und 1.28 sind das vorläufige Lehrerzimmer. Die Rallye gibt es für die Jahrgangsstufen 5 bis 10.
+- Vollversion: auf der Startseite im Feld „Code“ oder in der Tasche (B) `NEUBAUKOMPLETT` eingeben. Die Seite lädt neu; derselbe Code schaltet zurück. Die Wahl wird im Browser gespeichert, gilt also je Gerät.
+- Neu: Stufentribüne östlich der Turnhalle 4 mit begehbarem Hallendach; Türen ohne offen stehende Flügel.
