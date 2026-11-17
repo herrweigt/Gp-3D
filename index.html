@@ -191,7 +191,7 @@ WD.floors.forEach((f,i)=>{
   const s=new Uint8Array(GW*GH); fillRects(s,f.slab,1); slab.push(s);
 });
 // "Umzugs-Update": the wing with administration and sixth form (stair hall E.0/1.0/2.0) is a building site; the full version needs the code
-const TIB={'E.16':['Schülercafé','Schülercafé'],'E.32':['Beratung KJSA','KJSA'],'E.45':['EDV-Raum I','EDV-Raum 1'],'E.46':['EDV-Raum II','EDV-Raum 2'],'E.47':['Sekretariat','Sekretariat'],'E.48':['Schulleitung I','Schulleitung'],
+const TIB={'E.16':['Schülercafé','Schülercafé'],'E.32':['Beratung KJSA','KJSA'],'E.45':['EDV-Raum I','EDV-Raum 1'],'E.46':['EDV-Raum II','EDV-Raum 2'],'E.47':['Sekretariat','Sekretariat / Erste Hilfe'],'E.28':['Erste-Hilfe (ungenutzt)','derzeit ungenutzt – Erste Hilfe im Sekretariat E.47'],'E.17':[null,'Küchen-Ausgabe (Mittagspause)'],'E.48':['Schulleitung I','Schulleitung'],
   '1.1':['Differenzierung LIFE-Raum','LIFE-Raum'],'1.2':['Klassenzimmer','Klassenzimmer 5A','5A'],'1.3':['Klassenzimmer','Klassenzimmer 5B','5B'],'1.4':['Klassenzimmer','Klassenzimmer 5C','5C'],'1.5':['Klassenzimmer','Klassenzimmer 5D','5D'],'1.6':['Klassenzimmer','Klassenzimmer 5E','5E'],
   '1.15':['Klassenzimmer','Klassenzimmer 6A','6A'],'1.16':['Klassenzimmer','Klassenzimmer 6B','6B'],'1.17':['Klassenzimmer','Klassenzimmer 6C','6C'],'1.24':['Klassenzimmer','Klassenzimmer 7A','7A'],'1.25':['Klassenzimmer','Klassenzimmer 7B','7B'],
   '1.27':['Lehrer Kommunikation','Lehrkräfte'],'1.28':['Lehrer Kommunikation','Lehrkräfte'],
@@ -972,8 +972,12 @@ function whereText(){ let best=null,bd=9; for(const l of WD.floors[me.f].labels)
   const out=me.f===G&&!isInside(G,me.x,me.z); return FN[me.f]+' · '+(onStair?'Treppe':out?((me.x>156||me.x>113&&me.z<31)?'Sportgelände':me.x<RAMP.open&&me.z>RAMP.z0-1&&me.z<RAMP.z1+1&&me.x>RAMP.x0-4?'Tiefgaragenzufahrt':isInside(G+1,me.x,me.z)?'Unter dem Obergeschoss':'Schulgelände'):best?best:'Flur'); }
 
 // ================================================================ school life: clock, gong, crowd, staff, shop, library, litter
-const CYC=360, BRK=120; let tOff=0;
-function schoolT(){ const s=Date.now()/1000+tOff, t=s%CYC; return {t,brk:t<BRK,left:t<BRK?BRK-t:CYC-t,per:Math.floor(s/CYC)%6+1}; }
+const CYC=360, BRK=120, LES=CYC-BRK, LUNCH=300, DAY=LUNCH+6*LES+5*BRK; let tOff=0;     // a day: lunch break (after lesson 6 of the day before), then lessons 1–6 with breaks in between
+function schoolT(){ const s=Date.now()/1000+tOff, d=s%DAY;
+  if(d<LUNCH) return {t:d,brk:true,lunch:true,left:LUNCH-d,per:1};
+  const r=d-LUNCH, k=Math.floor(r/CYC), q=r-k*CYC;
+  return q<LES?{t:BRK+q,brk:false,lunch:false,left:LES-q,per:k+1}:{t:q-LES,brk:true,lunch:false,left:CYC-q,per:k+2}; }
+const toLunch=()=>{ const d=(Date.now()/1000+tOff)%DAY; return d<LUNCH?0:DAY-d; };
 let AC=null;
 function tone(fs,gap,len,vol){ if(!AC) return; try{ const t0=AC.currentTime+0.02; fs.forEach((f,i)=>{ const o=AC.createOscillator(), g=AC.createGain(); o.type='sine'; o.frequency.value=f; g.gain.setValueAtTime(0.0001,t0+i*gap); g.gain.linearRampToValueAtTime(vol||0.2,t0+i*gap+0.02); g.gain.exponentialRampToValueAtTime(0.0008,t0+i*gap+len); o.connect(g); g.connect(AC.destination); o.start(t0+i*gap); o.stop(t0+i*gap+len+0.05); }); }catch(e){} }
 const gong=()=>tone([659.3,523.3,392.0],0.55,1.7,0.22);
@@ -997,6 +1001,7 @@ const crowd=(()=>{ const mk=g=>{ const m=new THREE.InstancedMesh(g,lam({color:0x
 const _B=new THREE.Matrix4(), _L=new THREE.Matrix4(), _M=new THREE.Matrix4(), _P=new THREE.Vector3(), _Q=new THREE.Quaternion(), _S=new THREE.Vector3(), _UP=new THREE.Vector3(0,1,0), _Z=new THREE.Matrix4().makeScale(0,0,0), _C=new THREE.Color();
 function limbM(m,i,a,px,py){ _L.makeRotationX(a); _L.setPosition(px,py,0); _M.multiplyMatrices(_B,_L); m.setMatrixAt(i,_M); }
 function npcDraw(n){ const k=0.91*n.sc, i=n.i; let yo=0, la, lb, aa, ab;
+  if(n.hide){ for(const m in crowd) crowd[m].setMatrixAt(i,_Z); if(n.tag) n.tag.visible=false; return; } if(n.tag) n.tag.visible=true;
   if(n.pose===1){ yo=n.sh-0.8*k+0.03; la=lb=-1.45; aa=ab=-0.55; }
   else if(n.pose===2){ const s=Math.sin(n.ph); aa=-2.7+s*0.3; ab=-2.7-s*0.3; la=-0.5+s*0.4; lb=-0.5-s*0.4; }
   else { const s=n.mv?Math.sin(n.ph)*0.6:0; la=s; lb=-s; aa=-s*0.8; ab=n.wave>0?-2.5:s*0.8; }
@@ -1167,9 +1172,9 @@ function guideTo(fi,name,nth){ const r=room(FN[fi],name,nth||0); if(!r) return; 
 function secretary(){ const T=schoolT(), opts=[];
   if(!save.ausweis) opts.push(['🪪 Schülerausweis abholen',()=>{ save.ausweis=1; persist(); toast('Du hast jetzt deinen Schülerausweis. Damit kannst du Bücher ausleihen.',2600); secretary(); },'','Nehmen']);
   if(myClass) opts.push(['🏫 Wo ist mein Klassenzimmer?',()=>{ closeDlg(); cur={id:'_nav',t:'Wegweiser',d:'',timed:0,steps:[{f:myClass.f,x:myClass.tp.x,z:myClass.tp.z,name:myClass.disp,txt:'Dein Klassenzimmer der '+myClass.cn+' ('+FN[myClass.f]+').'}]}; curStep=0; updateMissionUI(); },'Klasse 7'+myClass.letter,'Zeigen']);
-  for(const [fi,nm,tx] of UMZUG?[[G,'Schulleitung I','Schulleitung (E.48)'],[2,'Lehrer Kommunikation','Lehrkräfte (1.27/1.28)'],[G,'Beratung KJSA','Jugendsozialarbeit KJSA (E.32)'],[G,'Erste-Hilfe-Raum','Erste Hilfe'],[G,'Hausmeister','Hausmeister'],[G,'Schülercafé','Schülercafé (E.16)'],[G,'EDV-Raum I','EDV-Räume'],[3,'OGS / Ganztagesbereich','OGTS (2.29/2.30)'],[0,'Kletter- und Konditionsraum','Kletterwand']]:[[G,'Pausenverkauf','Pausenverkauf'],[G,'Bibliothek','Bibliothek'],[G,'Erste-Hilfe-Raum','Erste Hilfe'],[G,'Hausmeister','Hausmeister'],[2,'Schulleitung I','Schulleitung'],[2,'Beratungslehrer','Beratungslehrkraft'],[0,'Kletter- und Konditionsraum','Kletterwand'],[2,'Chemie Fachraum','Chemie']]) opts.push(['🧭 Weg: '+tx+' ('+FN[fi]+')',()=>{ closeDlg(); guideTo(fi,nm); },'','Zeigen']);
+  for(const [fi,nm,tx] of UMZUG?[[G,'Schulleitung I','Schulleitung (E.48)'],[2,'Lehrer Kommunikation','Lehrkräfte (1.27/1.28)'],[G,'Beratung KJSA','Jugendsozialarbeit KJSA (E.32)'],[G,'Hausmeister','Hausmeister'],[G,'Schülercafé','Schülercafé (E.16)'],[G,'Speisenausgabe','Mensa / Küchen-Ausgabe (E.17)'],[G,'EDV-Raum I','EDV-Räume'],[3,'OGS / Ganztagesbereich','OGTS (2.29/2.30)'],[0,'Kletter- und Konditionsraum','Kletterwand']]:[[G,'Pausenverkauf','Pausenverkauf'],[G,'Bibliothek','Bibliothek'],[G,'Erste-Hilfe-Raum','Erste Hilfe'],[G,'Hausmeister','Hausmeister'],[2,'Schulleitung I','Schulleitung'],[2,'Beratungslehrer','Beratungslehrkraft'],[0,'Kletter- und Konditionsraum','Kletterwand'],[2,'Chemie Fachraum','Chemie']]) opts.push(['🧭 Weg: '+tx+' ('+FN[fi]+')',()=>{ closeDlg(); guideTo(fi,nm); },'','Zeigen']);
   opts.push(['🧣 Fundsachen',()=>{ dlg('Fundsachen','„In der Kiste liegen: eine Trinkflasche, ein einzelner Turnschuh (Größe 38), drei Mützen und ein Geodreieck. Vermisst du etwas davon?“',[['Nein, danke.',closeDlg,'','Zurück']]); },'','Ansehen']);
-  opts.push(['🤒 Ich fühle mich nicht gut',()=>{ closeDlg(); guideTo(G,'Erste-Hilfe-Raum'); toast('„Leg dich kurz im Erste-Hilfe-Raum hin, ich sage deiner Lehrkraft Bescheid.“',3200); },'','Melden']);
+  opts.push(['🤒 Ich fühle mich nicht gut',()=>{ closeDlg(); if(UMZUG){ toast('„Setz dich kurz hier zu uns – die Erste Hilfe ist gerade bei uns im Sekretariat. Ich sage deiner Lehrkraft Bescheid.“',3800); return; } guideTo(G,'Erste-Hilfe-Raum'); toast('„Leg dich kurz im Erste-Hilfe-Raum hin, ich sage deiner Lehrkraft Bescheid.“',3200); },'','Melden']);
   dlg('Sekretariat','„Grüß dich! Wie kann ich dir helfen?“ – '+(T.brk?'Gerade ist Pause.':'Es läuft die '+T.per+'. Stunde'+(myClass?': Die '+myClass.cn+' hat '+subjOf(myClass,T.per)+'.':'.')),opts); }
 
 // ---------------------------------------------------------------- lessons: joining a class means answering a question
@@ -1189,7 +1194,7 @@ const QZ={Mathematik:[['Wie viel ist 7 · 8?','56','54','63'],['Was ergibt (−3
  Kunst:[['Welche Farben ergeben Grün?','Blau und Gelb','Rot und Blau','Rot und Gelb'],['Was ist eine Primärfarbe?','Rot','Orange','Violett']],
  Informatik:[['Wie viele Bit hat ein Byte?','8','10','16'],['Was ist ein Algorithmus?','Eine eindeutige Handlungsvorschrift','Ein Bildschirm','Ein Passwort'],['Welche Zahl ist binär 101?','5','3','101']]};
 const asked=new Set();
-function lesson(c){ const T=schoolT(), sj=subjOf(c,T.per), key=c.k+'-'+Math.floor((Date.now()/1000+tOff)/CYC);
+function lesson(c){ const T=schoolT(), sj=subjOf(c,T.per), key=c.k+'-'+Math.floor((Date.now()/1000+tOff)/DAY)+'-'+T.per;
   if(asked.has(key)){ say(c.teacher,'Du warst schon dran – jetzt die anderen.'); return; }
   const q=pick(QZ[sj]||QZ.Mathematik), ans=q.slice(1).map((a,i)=>[a,i===0]).sort(()=>Math.random()-0.5), mine=c===myClass;
   dlg(sj+' – '+c.disp,'„'+(mine?'Ah, da bist du ja. ':'Ein Gast! ')+q[0]+'“',ans.map(a=>[a[0],()=>{ asked.add(key); closeDlg(); if(a[1]){ const p=mine?10:5; save.score+=p; earn(50); refreshStats(); say(c.teacher,'Richtig! Sehr gut.'); toast('✔ Richtig! +'+p+' und 0,50 € Taschengeld',2200); tone([784,1047],0.12,0.3,0.12); me.quizOk=(me.quizOk||0)+1; } else { say(c.teacher,'Nicht ganz: '+q[1]); toast('✘ Leider falsch. Richtig wäre: '+q[1],2600); } },'','Antworten'])); }
@@ -1232,7 +1237,8 @@ function findAct(){ if(!me.started||modal()) return null; const T=schoolT(); let
   for(const l of LIT){ const d=near(l.x,l.z,l.y,1.6); if(d<1e8) put(d,'Müll aufheben',()=>{ const mine=l.mine; rmLitter(l); save.trash++; me.picked=(me.picked||0)+1; if(!mine){ save.score+=1; refreshStats(); } persist(); hud(); toast(mine?'Aufgehoben. Ab damit in den Eimer!':'Aufgehoben. +1 – ab damit in den Eimer!',1500); },1); }
   if(save.trash) for(const b of BINS){ const d=near(b[1],b[2],LV[b[0]],1.7); if(d<1e8) put(d,'Müll wegwerfen ('+save.trash+')',()=>{ const n=save.trash; save.trash=0; save.score+=2*n; me.binned=(me.binned||0)+n; persist(); hud(); refreshStats(); toast('Sauber! '+n+' × Müll entsorgt: +'+2*n,1800); tone([523,659],0.08,0.2,0.1); },0.5); }
   const S=STAFF, st=(n,r,label,fn)=>{ if(n){ const d=near(n.x,n.z,n.y,r); if(d<1e8) put(d,label,fn,0.6); } };
-  st(S.kiosk,3.4,'Am Pausenverkauf einkaufen',()=>shop(KIOSK,'Pausenverkauf')); st(S.koch,3.4,'An der Speisenausgabe bestellen',()=>shop(['tag','salat','wasser','schorle'],'Speisenausgabe','Mahlzeit! Heute gibt es Käsespätzle.'));
+  st(S.kiosk,3.4,'Am Pausenverkauf einkaufen',()=>shop(KIOSK,'Pausenverkauf')); if(S.koch&&!S.koch.hide) st(S.koch,3.4,'An der Küchen-Ausgabe bestellen',()=>shop(['tag','salat','wasser','schorle'],'Küchen-Ausgabe (Mensa)','Mahlzeit! Heute gibt es Käsespätzle.'));
+  else if(S.koch){ const d=near(S.koch.home.x,S.koch.home.z,S.koch.home.y,3.4); if(d<1e8){ const m=Math.ceil(toLunch()/60); put(d,'Küchen-Ausgabe: geschlossen',()=>dlg('Küchen-Ausgabe (Mensa)','Die Küchen-Ausgabe hat nur in der Mittagspause nach der 6. Stunde geöffnet – die nächste beginnt in etwa '+m+' Minute'+(m===1?'':'n')+'.',[]),0.6); } }
   st(S.bib,3,'Bücher ausleihen oder zurückgeben',library); st(S.sek,3.4,'Im Sekretariat nachfragen',secretary); st(S.sek2,3.4,'Im Sekretariat nachfragen',secretary);
   st(S.sl,3.2,'Mit der Schulleitung sprechen',()=>say(S.sl,pick(['Willkommen am Gymnasium Putzbrunn!','Schön, dass du dich vorstellst. Viel Erfolg!','Bei Fragen hilft dir das Sekretariat nebenan.'])));
   st(S.hm,2.6,'Mit dem Hausmeister sprechen',()=>say(S.hm,pick(LINES.hm)));
@@ -1252,7 +1258,7 @@ function lifeTick(dtCapped,now){
   const dt=Math.min(1.2,lifeLast?(now-lifeLast)/1000:dtCapped); lifeLast=now;      // figures keep real time even on slow devices
   const T=schoolT();
   if(lastBrk===null) lastBrk=T.brk;
-  if(T.brk!==lastBrk){ lastBrk=T.brk; if(me.started){ gong(); if(T.brk){ toast(UMZUG?'🔔 Gong – Pause!':'🔔 Gong – Pause! Der Pausenverkauf hat offen.',3600); ambient(); } else toast('🔔 Gong – die '+T.per+'. Stunde beginnt.'+(myClass?' Die '+myClass.cn+' hat '+subjOf(myClass,T.per)+' in '+myClass.disp+' ('+FN[myClass.f]+').':''),4600); } }
+  if(T.brk!==lastBrk){ lastBrk=T.brk; if(me.started){ gong(); if(T.brk){ toast(T.lunch?'🔔 Gong – Mittagspause! Die Küchen-Ausgabe in der Mensa (E.17) hat jetzt geöffnet.':UMZUG?'🔔 Gong – Pause!':'🔔 Gong – Pause! Der Pausenverkauf hat offen.',3600); ambient(); } else toast('🔔 Gong – die '+T.per+'. Stunde beginnt.'+(myClass?' Die '+myClass.cn+' hat '+subjOf(myClass,T.per)+' in '+myClass.disp+' ('+FN[myClass.f]+').':''),4600); } }
   for(const n of NP){
     if(n.path&&(n.kind==='p'||n.kind==='t')&&n.c){
       if(n.st===0){ if(!T.brk&&T.t-BRK>n.dl){ n.st=1; n.pose=0; n.mv=1; n.pi=0; } else if(n.wave>0){ n.wave-=dt; n.dirty=1; } else if(Math.random()<dt*0.02){ n.wave=1.2; n.dirty=1; } }
@@ -1270,12 +1276,13 @@ function lifeTick(dtCapped,now){
     else if(s.t==='vball'){ const u=(Math.sin(tt*1.3)+1)/2; s.b.position.set(s.x0+(s.x1-s.x0)*u,1.2+3.2*Math.sin(Math.PI*u)*Math.abs(Math.cos(tt*1.3))+0.3,s.z+Math.sin(tt*0.7)*1.5); }
     else if(s.t==='volley'){ n.x=s.bx+Math.sin(tt*1.1+s.bz)*0.5; n.z=s.bz+Math.cos(tt*0.9+s.bx)*0.6; n.mv=1; n.dirty=1; }
     else if(s.t==='climb'){ n.y=s.base+Math.sin(tt*0.35+s.ph)*s.amp; n.ph+=dt*4; n.dirty=1; } }
+  if(STAFF.koch){ const h=!T.lunch; if(STAFF.koch.hide!==h){ STAFF.koch.hide=h; STAFF.koch.dirty=1; } }
   hmTick(dt,now);
   let any=false; for(const n of NP){ if(n.dirty){ npcDraw(n); n.dirty=n.mv?1:0; any=true; if(n.tag) n.tag.position.set(n.x,n.y+(n.pose===1?1.75:2.15),n.z); } }
   if(any) for(const k in crowd) crowd[k].instanceMatrix.needsUpdate=true;
   if(talk){ talk.t-=dt; talk.sp.position.set(talk.n.x,talk.n.y+(talk.n.pose===1?2.0:2.4),talk.n.z); if(talk.t<=0){ scene.remove(talk.sp); talk.sp.material.map.dispose(); talk.sp.material.dispose(); talk=null; } }
   actAcc+=dt; if(actAcc>0.15){ actAcc=0; act=findAct(); const e=$('act'); if(act){ e.textContent=(isTouch?'':'[E] ')+act.label; e.style.display='block'; } else e.style.display='none'; }
-  hudAcc+=dt; if(hudAcc>0.5){ hudAcc=0; const s=Math.ceil(T.left); $('clock').textContent=(T.brk?'🔔 Pause':'📖 '+T.per+'. Stunde')+' · noch '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); hud(); }
+  hudAcc+=dt; if(hudAcc>0.5){ hudAcc=0; const s=Math.ceil(T.left); $('clock').textContent=(T.lunch?'🍽 Mittagspause':T.brk?'🔔 Pause':'📖 '+T.per+'. Stunde')+' · noch '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); hud(); }
 }
 
 $('modeInfo').textContent=UMZUG?'🚧 Umzugs-Update: Der Flügel mit Verwaltung und Oberstufe ist noch Baustelle und abgesperrt. Eingang über Treppenraum II.':'Vollversion: alle Gebäudeteile offen. (Code erneut eingeben, um zum Umzugs-Update zurückzukehren.)';
@@ -1321,7 +1328,7 @@ const KNO={}; for(const k in TIB) if(TIB[k][2]) KNO[TIB[k][2]]=k;
 function ownRoom(){ const c=myClass; if(!c) return null; return {f:c.f,x:c.tp.x,z:c.tp.z,name:c.disp}; }
 function rallyePlanU(cl){ const g=parseInt(cl), own=rNo([KNO[cl]]);
   const pool=[[g<=7?'Natur und Technik':'Biologie',['1.29','1.30','1.32','1.33']],['Kunst',['2.31','2.34','2.36']],['Musik',['2.2']],['Sport',['TH 1','TH 2','TH 3','TH 4']],['Krankmeldung im Sekretariat abgeben',['E.47']],
-    ['Heft bei den Lehrkräften abgeben',['1.27','1.28']],['Mittagspause',['E.16']],['Intensivierung',null]];
+    ['Heft bei den Lehrkräften abgeben',['1.27','1.28']],['Mittagessen in der Mensa',['E.17']],['Intensivierung',null]];
   if(g>=6) pool.push(['Informatik',['E.45','E.46']]); if(g>=7) pool.push(['Physik',['2.37','2.38','2.40','2.41']]); if(g>=8) pool.push(['Chemie',['1.34','1.35','1.37','1.38']]); if(g<=7) pool.push(['Nachmittag in der OGTS',['2.29','2.30']]);
   const steps=[]; if(own) steps.push(Object.assign(own,{sub:pick(['Deutsch','Mathematik','Englisch'])}));
   for(const p of pool.sort(()=>Math.random()-0.5)){ if(steps.length>=6) break; const r=p[1]?rNo(p[1]):rPick(JG[Math.min(g,10)][0],/^Differenzierungszone/,own?[own.x,own.z]:[JG[g][1],JG[g][2]]); if(r&&!steps.some(s=>s.name===r.name)) steps.push(Object.assign(r,{sub:p[0]})); }
@@ -1338,15 +1345,16 @@ if(UMZUG){
     KLASSEN.map(k=>['Klasse '+k,()=>rallyeStart(k),parseInt(k)<=7?'Klassenzimmer im 1. OG':'Klassenzimmer im 2. OG','Start'])); };
   const old=$('btnRallye'), nb=old.cloneNode(true); old.replaceWith(nb); nb.addEventListener('click',()=>rallyeMenu());
   // missions for the partial opening: every target is a room that is in use
-  const mk=(id,t,d,list)=>{ const steps=[]; for(const s of list){ const r=s.own?Object.assign({own:1},ownRoom()||{}):rNo(s.no); if(r&&r.name){ Object.assign(r,{txt:s.txt,need:s.need,nt:s.nt}); steps.push(r); } }
+  const mk=(id,t,d,list)=>{ const steps=[]; for(const s of list){ const r=s.own?Object.assign({own:1},ownRoom()||{}):s.key?room(FN[s.key[0]],s.key[1]):rNo(s.no); if(r&&r.name){ Object.assign(r,{txt:s.txt,need:s.need,nt:s.nt}); steps.push(r); } }
     if(steps.length<2) return null; return {id,t,d,timed:0,steps,want:list.length,prep(){ for(const s of steps) if(s.own){ const o=ownRoom(); if(o) Object.assign(s,o); } }}; };
   const NEW=[mk('start','Erster Schultag','Melde dich an und finde deinen Platz.',[{no:['E.47'],txt:'Hol im Sekretariat (vorläufig E.47 im EG) deinen Schülerausweis.',need:()=>save.ausweis,nt:'hol im Sekretariat den Ausweis (E)'},{no:['E.48'],txt:'Stell dich kurz bei der Schulleitung vor (E.48, gleich daneben).'},{own:1,txt:'Such dir einen Platz in deinem Klassenzimmer.'}]),
     mk('kunst','Kunstausstellung','Deine Bilder sollen alle sehen.',[{no:['2.34'],txt:'Hol dein Bild aus Kunst 1 (2.34, OG2).'},{no:['2.32'],txt:'Bau im Holzraum (2.32) einen Rahmen dafür.'},{no:['E.16'],txt:'Häng es im Schülercafé (E.16) auf.'}]),
     mk('musik','Pausenkonzert','Noten holen, auftreten.',[{no:['2.2'],txt:'Hol die Noten im Musik-Klassenzimmer (2.2, OG2).'},{no:['E.16'],txt:'Spiel ein kleines Pausenkonzert im Schülercafé (E.16).'}]),
     mk('edv','Digital-Profi','Präsentation vorbereiten.',[{no:['E.45'],txt:'Erstelle deine Folien im EDV-Raum 1 (E.45).'},{no:['E.46'],txt:'Drucke das Handout im EDV-Raum 2 (E.46).'},{own:1,txt:'Präsentiere in deinem Klassenzimmer.'}]),
     mk('hilfe','Wer hilft mir?','Ansprechpartner kennenlernen.',[{no:['E.32'],txt:'Stell dich bei der Jugendsozialarbeit (KJSA, E.32) vor.'},{no:['2.29','2.30'],txt:'Schau dir die Nachmittagsbetreuung in der OGTS an (OG2).'},{no:['1.27','1.28'],txt:'Gib bei den Lehrkräften (1.27/1.28) einen Zettel ab.'}]),
+    mk('pause','Mittagessen','Nach der 6. Stunde ist Mittagspause.',[{no:['E.17'],txt:'Hol dir in der Mittagspause ein Essen an der Küchen-Ausgabe (E.17, Mensa).',need:()=>me.bought.tag||me.bought.salat,nt:'kauf ein Essen (E) – geöffnet nur in der Mittagspause nach der 6. Stunde'},{no:['E.16'],txt:'Iss im Schülercafé (E.16) – Tasche öffnen mit B.',need:()=>me.ate,nt:'iss etwas aus deiner Tasche (B)'}]),
+    mk('haus','Hausmeister-Helfer','Pack mit an.',[{key:[G,'Hausmeister'],txt:'Frag beim Hausmeister, was zu tun ist.'},{no:['U.0'],txt:'Schau in der Tiefgarage nach, ob das Licht brennt.'},{no:['E.47'],txt:'Fülle im Sekretariat (E.47) den Erste-Hilfe-Kasten auf.'}]),
     mk('stunde','Mitarbeit','Melde dich im Unterricht.',[{own:1,txt:'Geh in dein Klassenzimmer.'},{own:1,txt:'Beantworte während der Stunde die Frage der Lehrkraft richtig (E bei der Lehrkraft).',need:()=>me.quizOk>0,nt:'antworte der Lehrkraft richtig (E, während der Stunde)'}])].filter(Boolean);
-  for(const id of ['pause']){ const k=MISSIONS.findIndex(x=>x.id===id); if(k>=0) MISSIONS.splice(k,1); }     // no break kiosk during the partial opening
   for(const m of NEW){ const k=MISSIONS.findIndex(x=>x.id===m.id); if(k>=0) MISSIONS.splice(k,1,m); else if(m.id==='start') MISSIONS.unshift(m); else MISSIONS.push(m); }
   if(typeof buildMenu==='function') buildMenu(); refreshStats();
 }
@@ -1397,7 +1405,7 @@ $('nick').value=save.name||'';
 function start(){ { const cv=$('code').value; if(cv&&cheat(cv)) return; } let n=$('nick').value.replace(/[^\p{L}\p{N} _.\-]/gu,'').trim().slice(0,14); if(!n) n='Gast'+Math.floor(100+Math.random()*900); save.name=n; persist(); $('nick').blur(); $('overlay').style.display='none'; me.started=true; try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} refreshStats(); drawMap(); hud(); ambient(); if(UMZUG) me.yaw=0; { const q=/[?#&]rallye=(\d+)([a-eA-E]?)/.exec(location.search+location.hash); if(q&&WORDS[+q[1]]){ const k=(q[1]+q[2]).toUpperCase(); setTimeout(()=>rallyeStart(UMZUG&&KLASSEN.includes(k)?k:+q[1]),300); } } toast(UMZUG?'Willkommen, '+n+'! Umzugs-Update: Der Flügel mit Aula und Oberstufe ist noch Baustelle. Vor dir liegt der Eingang am Treppenraum II. Sekretariat und Schulleitung findest du vorläufig in E.47 und E.48.':'Willkommen, '+n+'! Vor dir liegt der Haupteingang. E = ansprechen/handeln, Leertaste = springen, K = Karte.',6200); }
 $('go').addEventListener('click',start); $('nick').addEventListener('keydown',e=>{ if(e.key==='Enter') start(); });
 updateMissionUI(); refreshStats(); initNet(); requestAnimationFrame(tick); booted=true;
-window.__game={me,save,Net,stars,STAIRS,MISSIONS,LV,C,G,FN,canStand,standY,moveBy,startMission,peerAv,floorOf,WD,grid,inside,isInside,camera,NP,LIFE,STAFF,classes,HM,LIT,BINS,KW,SP,RAMP,SEATS,COUNTERS,buy,eat,bag,library,secretary,lesson,doAct,findAct,dropLitter,jump,climbStart,schoolT,cheat,dispOf,SCI,PLATES,TIB,KLASSEN,myC:()=>myClass,rallyeStart,rallyePlan,rallyeHelp,rallyeMenu,cur:()=>cur,GATES,TRB,UMZUG,inZone,setT:v=>{ tOff=v-((Date.now()/1000)%CYC); },nodes:()=>NN,act:()=>act,closeDlg,step,keys};
+window.__game={me,save,Net,stars,STAIRS,MISSIONS,LV,C,G,FN,canStand,standY,moveBy,startMission,peerAv,floorOf,WD,grid,inside,isInside,camera,NP,LIFE,STAFF,classes,HM,LIT,BINS,KW,SP,RAMP,SEATS,COUNTERS,buy,eat,bag,library,secretary,lesson,doAct,findAct,dropLitter,jump,climbStart,schoolT,cheat,dispOf,SCI,PLATES,TIB,KLASSEN,myC:()=>myClass,rallyeStart,rallyePlan,rallyeHelp,rallyeMenu,cur:()=>cur,GATES,TRB,UMZUG,inZone,setT:v=>{ const d=LUNCH+LES+v; tOff=d-((Date.now()/1000)%DAY); },setLunch:v=>{ tOff=(v||5)-((Date.now()/1000)%DAY); },nodes:()=>NN,act:()=>act,closeDlg,step,keys};
 })();
 </script>
 </body>
