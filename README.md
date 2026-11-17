@@ -44,3 +44,9 @@ Bitte die Klasse anweisen, Fantasienamen zu verwenden. Vor dem Einsatz mit Schü
 - Standard ist das Umzugs-Update: Der Flügel mit Verwaltung und Oberstufe samt Treppenhalle E.0/1.0/2.0 ist mit Bauzäunen abgesperrt, Start ist am Eingang Treppenraum II (TR E.2). Die Räume 1.27 und 1.28 sind das vorläufige Lehrerzimmer. Die Rallye gibt es für die Jahrgangsstufen 5 bis 10.
 - Vollversion: auf der Startseite im Feld „Code“ oder in der Tasche (B) `NEUBAUKOMPLETT` eingeben. Die Seite lädt neu; derselbe Code schaltet zurück. Die Wahl wird im Browser gespeichert, gilt also je Gerät.
 - Neu: Stufentribüne östlich der Turnhalle 4 mit begehbarem Hallendach; Türen ohne offen stehende Flügel.
+
+## Teilinbetriebnahme (Raumnutzung vom 17.11.2026)
+
+- Im Umzugs-Update tragen die genutzten Räume die Bezeichnung aus der Raumnutzungstabelle: Klassenzimmer 5A–9B, Lehrkräfte (1.27/1.28), Sekretariat (E.47), Schulleitung (E.48), KJSA (E.32), EDV-Raum 1/2 (E.45/E.46), Schülercafé (E.16), LIFE-Raum (1.1), OGTS (2.29/2.30), Klassenzimmer Musik (2.2), Biologie, Chemie, Kunst, Physik.
+- Nicht genutzte Klassenräume heißen „Klassenraum (derzeit frei)“; dort findet kein Unterricht statt.
+- Rallye: Auswahl nach Klasse (5A bis 9B). Die erste Stunde ist immer im echten Klassenzimmer, die übrigen fünf werden aus den genutzten Fachräumen gewürfelt. Direktlink: `?rallye=7b`.

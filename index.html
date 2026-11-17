@@ -191,6 +191,17 @@ WD.floors.forEach((f,i)=>{
   const s=new Uint8Array(GW*GH); fillRects(s,f.slab,1); slab.push(s);
 });
 // "Umzugs-Update": the wing with administration and sixth form (stair hall E.0/1.0/2.0) is a building site; the full version needs the code
+const TIB={'E.16':['Schülercafé','Schülercafé'],'E.32':['Beratung KJSA','KJSA'],'E.45':['EDV-Raum I','EDV-Raum 1'],'E.46':['EDV-Raum II','EDV-Raum 2'],'E.47':['Sekretariat','Sekretariat'],'E.48':['Schulleitung I','Schulleitung'],
+  '1.1':['Differenzierung LIFE-Raum','LIFE-Raum'],'1.2':['Klassenzimmer','Klassenzimmer 5A','5A'],'1.3':['Klassenzimmer','Klassenzimmer 5B','5B'],'1.4':['Klassenzimmer','Klassenzimmer 5C','5C'],'1.5':['Klassenzimmer','Klassenzimmer 5D','5D'],'1.6':['Klassenzimmer','Klassenzimmer 5E','5E'],
+  '1.15':['Klassenzimmer','Klassenzimmer 6A','6A'],'1.16':['Klassenzimmer','Klassenzimmer 6B','6B'],'1.17':['Klassenzimmer','Klassenzimmer 6C','6C'],'1.24':['Klassenzimmer','Klassenzimmer 7A','7A'],'1.25':['Klassenzimmer','Klassenzimmer 7B','7B'],
+  '1.27':['Lehrer Kommunikation','Lehrkräfte'],'1.28':['Lehrer Kommunikation','Lehrkräfte'],
+  '1.29':['Biologie Fachraum','Biologie 1'],'1.30':['Biologie Übung','Biologie Übung 1'],'1.31':['Biologie Sammlung','Biologie Sammlung'],'1.32':['Biologie Übung','Biologie Übung 2'],'1.33':['Biologie Fachraum','Biologie 2'],
+  '1.34':['Chemie Fachraum','Chemie 1'],'1.35':['Chemie Übung','Chemie Übung 1'],'1.36':['Chemie Sammlung','Chemie Sammlung'],'1.37':['Chemie Übung','Chemie Übung 2'],'1.38':['Chemie Fachraum','Chemie 2'],
+  '2.2':['Klassenzimmer','Klassenzimmer Musik'],'2.4':['Klassenzimmer','Klassenzimmer 8A','8A'],'2.5':['Klassenzimmer','Klassenzimmer 8B','8B'],'2.16':['Klassenzimmer','Klassenzimmer 9A','9A'],'2.17':['Klassenzimmer','Klassenzimmer 9B','9B'],
+  '2.29':['OGS / Ganztagesbereich','OGTS'],'2.30':['OGS / Ganztagesbereich','OGTS'],
+  '2.31':['Kunstsaal','Kunst'],'2.32':[null,'Kunst Holz'],'2.33':[null,'Kunst Ton'],'2.34':['Kunstsaal','Kunst 1'],'2.35':[null,'Kunst Vorbereitung'],'2.36':['Kunstsaal','Kunst 2'],
+  '2.37':['Physik Fachraum','Physik 1'],'2.38':['Physik Übung','Physik Übung'],'2.39':['Physik Sammlung','Physik Sammlung'],'2.40':['Physik Fachraum','Physik 2'],'2.41':['Physik Fachraum','Physik 3']};
+const KLASSEN=['5A','5B','5C','5D','5E','6A','6B','6C','7A','7B','8A','8B','9A','9B'];
 let UMZUG=true; try{ UMZUG=localStorage.getItem('gp-mode')!=='voll'; }catch(e){}
 const ZL=68.9, zoneX=f=>f===G?66.0:68.4, GATES=[];
 const inZone=(f,x,z)=>UMZUG&&f>=G&&x<zoneX(f)&&(z>ZL||x<46.4&&z>66.0)&&isInside(f,x,z);
@@ -203,9 +214,9 @@ if(UMZUG){
     for(let x=0;x<xc;x++) for(let y=zw+1;y<GH;y++){ if(!gate[y*GW+x]||used[y*GW+x]) continue; let e=y; while(e+1<GH&&gate[(e+1)*GW+x]&&!used[(e+1)*GW+x]) e++; for(let k=y;k<=e;k++) used[k*GW+x]=1; GATES.push({f,x0:x*C,z0:y*C,x1:(x+1)*C,z1:(e+1)*C}); y=e; }
     for(let y=zw+1;y<GH;y++) for(let x=0;x<xc;x++){ if(!gate[y*GW+x]) continue; for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++) if(cl(x+dx,y+dy)) g[(y+dy)*GW+x+dx]=1; }
     const F=WD.floors[f]; for(const l of F.labels) l.closed=cl(l[1],l[2]); for(const r of F.rooms) r.closed=cl(Math.round((r[1]+r[3])/2),Math.round((r[2]+r[4])/2)); }
-  // until the staff room opens, rooms 1.27 and 1.28 serve as the teachers' room
-  for(const r of WD.floors[2].rooms) if(r.no==='1.27'||r.no==='1.28'){ r[0]='Lehrer Kommunikation'; r.disp='Lehrerzimmer (vorläufig)'; }
-  for(const l of WD.floors[2].labels) if(l[4]==='1.27'||l[4]==='1.28'){ l[0]='Lehrer Kommunikation'; l[3]='Lehrerzimmer (vorläufig)'; }
+  // room use during the partial opening: [internal type or null = keep, sign text, class]
+  for(const f of WD.floors){ for(const r of f.rooms){ const t=r.no&&TIB[r.no]; if(t){ if(t[0]) r[0]=t[0]; r.disp=t[1]; r.cls=t[2]||null; } else if(r[0]==='Klassenzimmer'&&/^Klassenr/.test(r.disp||'')&&!r.closed) r.disp='Klassenraum (derzeit frei)'; }
+    for(const l of f.labels){ const t=l[4]&&TIB[l[4]]; if(t){ if(t[0]) l[0]=t[0]; l[3]=t[1]; } else if(l[0]==='Klassenzimmer'&&/^Klassenr/.test(l[3]||'')&&!l.closed) l[3]='Klassenraum (derzeit frei)'; } }
   WD.spawn=[Math.round(75.4/C),Math.round(38.5/C)];       // entrance during the move: stair core TR E.2 on the north side
 }
 const HB=WD.hallb, inHallCell=(cx,cy)=> cx>=HB[0]&&cx<HB[2]&&cy>=HB[1]&&cy<HB[3];
@@ -744,7 +755,7 @@ function moveBy(dx,dz,dist){ // sub-stepped movement with sliding; returns the d
 }
 
 // ================================================================ missions
-const room=(fn,name,nth)=>{ const f=FI[fn], ls=WD.floors[f].labels.filter(l=>l[0]===name); if(!ls.length) return null; const l=ls[Math.min(nth||0,ls.length-1)]; return {f,x:cw(l[1]),z:cw(l[2]),name:dispOf(l),key:name}; };
+const room=(fn,name,nth)=>{ const f=FI[fn], ls=WD.floors[f].labels.filter(l=>l[0]===name&&!l.closed); if(!ls.length) return null; const l=ls[Math.min(nth||0,ls.length-1)]; return {f,x:cw(l[1]),z:cw(l[2]),name:dispOf(l),key:name}; };
 const H3=[WD.halls[0][0]*C+3,WD.halls[0][1]*C+3,WD.halls[2][2]*C-3,WD.halls[2][3]*C-3];
 const pt=(x,z,name,txt)=>({f:G,x,z,name,txt});
 const MISSIONS=[
@@ -775,7 +786,7 @@ const MISSIONS=[
 if(UMZUG) for(let k=MISSIONS.length-1;k>=0;k--) if(MISSIONS[k].steps.some(s=>inZone(s.f,s.x,s.z))) MISSIONS.splice(k,1);
 let cur=null, curStep=0, tStart=0;
 function toast(t,ms){ const e=$('toast'); e.textContent=t; e.style.opacity=1; clearTimeout(toast.h); toast.h=setTimeout(()=>e.style.opacity=0,ms||2600); }
-function startMission(m){ if(m.id==='muell'){ me.picked=0; me.binned=0; ambient(); } if(m.id==='stunde') me.quizOk=0; cur=m; curStep=0; tStart=0; toast('Mission: '+m.t); updateMissionUI(); }
+function startMission(m){ if(m.prep) m.prep(); if(m.id==='muell'){ me.picked=0; me.binned=0; ambient(); } if(m.id==='stunde') me.quizOk=0; cur=m; curStep=0; tStart=0; toast('Mission: '+m.t); updateMissionUI(); }
 function updateMissionUI(){
   if(!cur){ $('mTitle').textContent='Freies Erkunden'; $('mStep').textContent='Sammle Sterne oder wähle eine Mission.'; $('mHint').textContent=''; beacon.visible=false; target.on=false; $('btnHelp').style.display='none'; return; }
   $('mTitle').textContent=cur.t+' ('+(curStep+1)+'/'+cur.steps.length+')'; $('mStep').textContent=cur.steps[curStep].txt; $('btnHelp').style.display=cur.rallye?'':'none';
@@ -800,7 +811,7 @@ function stepDone(){
   if(save.done.includes(cur.id)){ pts=cur.timed?Math.round(pts/5):5; msg='Mission wiederholt. +'+pts; } else save.done.push(cur.id);
   save.score+=pts; save.money+=200; persist(); toast('🏆 '+msg+' · 2,00 € Taschengeld',3600); cur=null; updateMissionUI(); refreshStats();
 }
-function buildMenu(){ const box=$('mlist'); box.textContent=''; { const row=document.createElement('div'); row.className='m'; const l=document.createElement('div'), b=document.createElement('b'), sm=document.createElement('small'); b.textContent='🧭 Schulhaus-Rallye'; sm.textContent='Jahrgangsstufe wählen und die Räume deines Stundenplans finden – ohne Zielmarkierung.'; l.append(b,sm); const bt=document.createElement('button'); bt.textContent='Start'; bt.addEventListener('click',()=>{ closeMenu(); rallyeMenu(); }); row.append(l,bt); box.append(row); }
+function buildMenu(){ const box=$('mlist'); box.textContent=''; { const row=document.createElement('div'); row.className='m'; const l=document.createElement('div'), b=document.createElement('b'), sm=document.createElement('small'); b.textContent='🧭 Schulhaus-Rallye'; sm.textContent=(UMZUG?'Klasse':'Jahrgangsstufe')+' wählen und die Räume deines Stundenplans finden – ohne Zielmarkierung.'; l.append(b,sm); const bt=document.createElement('button'); bt.textContent='Start'; bt.addEventListener('click',()=>{ closeMenu(); rallyeMenu(); }); row.append(l,bt); box.append(row); }
   for(const m of MISSIONS){ const row=document.createElement('div'); row.className='m'+(save.done.includes(m.id)?' done':''); const l=document.createElement('div'); const b=document.createElement('b'); b.textContent=(save.done.includes(m.id)?'✔ ':'')+m.t; const sm=document.createElement('small'); sm.textContent=m.d+' · Start: '+(isInside(m.steps[0].f,m.steps[0].x,m.steps[0].z)?FN[m.steps[0].f]:'Außengelände'); l.append(b,sm); const bt=document.createElement('button'); bt.textContent='Start'; bt.addEventListener('click',()=>{ startMission(m); closeMenu(); }); row.append(l,bt); box.append(row); } }
 const unlock=()=>{ if(document.exitPointerLock) try{ document.exitPointerLock(); }catch(e){} };
 function openMenu(){ if(!me.started) return; closeMap(); buildMenu(); $('menu').style.display='flex'; unlock(); }
@@ -1015,16 +1026,17 @@ const inRoom=(r,f,pad)=> r&&me.f===f&&me.x>r[1]*C-(pad||0)&&me.x<r[3]*C+(pad||0)
 const TEACH=/Klassenzimmer|Kursraum|Fachraum|Übung|Musikraum|EDV-Raum|Kunstsaal|Werken|Ausweichraum/;
 const CORE=['Mathematik','Deutsch','Englisch','Geschichte','Geographie','Latein','Französisch','Ethik','Wirtschaft und Recht'];
 const classes=[];
-function subjOf(c,per){ const n=c.name; if(/Chemie/.test(n)) return 'Chemie'; if(/Physik/.test(n)) return 'Physik'; if(/Biologie/.test(n)) return 'Biologie'; if(/Musik/.test(n)) return 'Musik'; if(/Kunst|Werken/.test(n)) return 'Kunst'; if(/EDV/.test(n)) return 'Informatik'; return CORE[(c.k*5+per*3)%CORE.length]; }
-WD.floors.forEach((f,i)=>{ for(const r of f.rooms){ if(!TEACH.test(r[0])) continue; const seats=SEATS.filter(s=>s.r===r); if(seats.length<4) continue;
+function subjOf(c,per){ const n=c.name+' '+(c.disp||''); if(/Chemie/.test(n)) return 'Chemie'; if(/Physik/.test(n)) return 'Physik'; if(/Biologie/.test(n)) return 'Biologie'; if(/Musik/.test(n)) return 'Musik'; if(/Kunst|Werken/.test(n)) return 'Kunst'; if(/EDV/.test(n)) return 'Informatik'; return CORE[(c.k*5+per*3)%CORE.length]; }
+WD.floors.forEach((f,i)=>{ for(const r of f.rooms){ if(!TEACH.test(r[0])) continue; if(UMZUG&&!(r.no&&TIB[r.no])) continue; const seats=SEATS.filter(s=>s.r===r); if(seats.length<4) continue;
   const F=frame(i,r,frontFor(r)); let tp=null; for(const v of [F.Wd/2+1.7,F.Wd/2-1.7,F.Wd/2+2.6,F.Wd/2]){ for(const u of [0.9,1.2,0.6]){ const p=F.pt(u,v); if(canStand(i,p[0],p[1])){ tp={f:i,x:p[0],z:p[1],y:LV[i],rot:Math.atan2(F.du[0],F.du[1]),sit:0,h:0}; break; } } if(tp) break; }
   if(!tp) continue;
   const grade=/Kursraum/.test(r[0])?12:/11\./.test(r[0])?11:/Klassenzimmer/.test(r[0])?(i===2?5+classes.length%4:8+classes.length%3):5+Math.floor(rnd()*8);
-  classes.push({k:classes.length,f:i,r,name:r[0],disp:(r.no?r.no+' ':'')+(r.disp||r[0]),seats,tp,grade,pupils:[],teacher:null,src:-1,done:false,letter:'abcd'[classes.length%4]}); } });
+  const cls=UMZUG?(r.cls||pick(KLASSEN)):null, gr=cls?parseInt(cls):grade;
+  classes.push({k:classes.length,f:i,r,name:r[0],cn:cls||(gr+'abcd'[classes.length%4]),own:!!r.cls,disp:(r.no?r.no+' ':'')+(r.disp||r[0]),seats,tp,grade:gr,pupils:[],teacher:null,src:-1,done:false,letter:'abcd'[classes.length%4]}); } });
 for(const c of classes){ const n=Math.min(c.seats.length,5+Math.floor(rnd()*4)), ss=c.seats.slice().sort(()=>rnd()-0.5).slice(0,n);
   for(const s of ss){ s.used=1; const p=addNPC({kind:'p',sc:0.88+(c.grade-5)*0.028+(rnd()-0.5)*0.07,w:0.9+rnd()*0.2,v:1.8+rnd()*0.9,dl:rnd()*12,cls:{f:c.f,x:s.x,z:s.z,y:LV[c.f],rot:s.rot,sit:1,h:s.h},c}); if(!p) break; setPlace(p,p.cls); c.pupils.push(p); }
   const t=addNPC({kind:'t',sc:1.06+rnd()*0.1,w:0.95+rnd()*0.2,pk:0,v:1.5,dl:4+rnd()*10,cls:c.tp,c}); if(t){ setPlace(t,c.tp); c.teacher=t; } }
-let myClass=null; { const r=MISSIONS.find(m=>m.id==='start'); if(r){ const s=r.steps[r.steps.length-1]; let bd=1e9; for(const c of classes){ if(c.f!==s.f) continue; const d=Math.hypot((c.r[1]+c.r[3])/2*C-s.x,(c.r[2]+c.r[4])/2*C-s.z); if(d<bd){ bd=d; myClass=c; } } } }
+let myClass=null; if(UMZUG){ myClass=classes.find(c=>c.own&&c.cn===(save.cls||'5A'))||classes.find(c=>c.own)||null; } else { const r=MISSIONS.find(m=>m.id==='start'); if(r){ const s=r.steps[r.steps.length-1]; let bd=1e9; for(const c of classes){ if(c.f!==s.f) continue; const d=Math.hypot((c.r[1]+c.r[3])/2*C-s.x,(c.r[2]+c.r[4])/2*C-s.z); if(d<bd){ bd=d; myClass=c; } } } }
 
 // ---------------------------------------------------------------- staff with fixed places
 const STAFF={};
@@ -1033,9 +1045,10 @@ function staff(key,pl,o){ if(!pl) return null; const n=addNPC(Object.assign({kin
   const v=staff('kiosk',kc?{f:kc.f,x:kc.vx,z:kc.vz,y:LV[kc.f],rot:kc.rot,sit:0}:placeIn(G,'Pausenverkauf'),{shirt:0xf5f5f0,pants:0x2f3b52}); if(v) roleTag(v,'Pausenverkauf');
   const k=staff('koch',sc?{f:sc.f,x:sc.vx,z:sc.vz,y:LV[sc.f],rot:sc.rot,sit:0}:placeIn(G,'Speisenausgabe'),{shirt:0xf5f5f0,pants:0xf5f5f0}); if(k) roleTag(k,'Speisenausgabe');
   const b=staff('bib',placeIn(G,'Bibliothek'),{shirt:0x7a5c7a}); if(b) roleTag(b,'Ausleihe');
-  const s1=staff('sek',placeIn(2,'Sekretariat',0),{shirt:0x3f5873}); if(s1) roleTag(s1,'Sekretariat'); staff('sek2',placeIn(2,'Sekretariat',1),{shirt:0x9a4b4b});
-  const d=staff('sl',placeIn(2,'Schulleitung I'),{shirt:0x23395b,sc:1.12}); if(d) roleTag(d,'Schulleitung');
+  const s1=staff('sek',placeIn(UMZUG?G:2,'Sekretariat',0),{shirt:0x3f5873}); if(s1) roleTag(s1,'Sekretariat'); staff('sek2',placeIn(UMZUG?G:2,'Sekretariat',1),{shirt:0x9a4b4b});
+  const d=staff('sl',placeIn(UMZUG?G:2,'Schulleitung I'),{shirt:0x23395b,sc:1.12}); if(d) roleTag(d,'Schulleitung');
   staff('ogs',placeIn(G,'OGS Büro')); staff('psy',placeIn(2,'Schulpsychologe')); staff('ber',placeIn(2,'Beratungslehrer')); staff('osk',placeIn(2,'Oberstufenkoordination')); staff('usk',placeIn(2,'Unterstufenkoordination'));
+  if(UMZUG){ const k=staff('kjsa',placeIn(G,'Beratung KJSA'),{shirt:0x4f7a3a}); if(k) roleTag(k,'Jugendsozialarbeit'); const o=staff('ogts',placeIn(3,'OGS / Ganztagesbereich'),{shirt:0xe86aa6}); if(o) roleTag(o,'OGTS'); }
   const h=staff('hm',placeIn(G,'Hausmeister'),{shirt:0x3d5a80,pants:0x3d5a80,sc:1.12,v:3.1}); if(h){ h.kind='h'; roleTag(h,'Hausmeister'); }
   for(let i=0;i<7;i++){ const p=placeIn(2,'Lehrer Kommunikation',0)||null; if(p&&p.sit) staff('lz'+i,p,{kind:'t'}); }
   const sl=placeIn(2,'Lehrer Silentium',0); if(sl&&sl.sit) staff('lz8',sl,{kind:'t'});
@@ -1153,11 +1166,11 @@ function readBook(){ if(!save.books.length) return; me.didRead=1; const b=save.b
 function guideTo(fi,name,nth){ const r=room(FN[fi],name,nth||0); if(!r) return; cur={id:'_nav',t:'Wegweiser',d:'',timed:0,steps:[Object.assign(r,{txt:'Folge der grünen Markierung: '+name+' ('+FN[fi]+').'})]}; curStep=0; updateMissionUI(); }
 function secretary(){ const T=schoolT(), opts=[];
   if(!save.ausweis) opts.push(['🪪 Schülerausweis abholen',()=>{ save.ausweis=1; persist(); toast('Du hast jetzt deinen Schülerausweis. Damit kannst du Bücher ausleihen.',2600); secretary(); },'','Nehmen']);
-  if(myClass) opts.push(['🏫 Wo ist mein Klassenzimmer?',()=>{ closeDlg(); cur={id:'_nav',t:'Wegweiser',d:'',timed:0,steps:[{f:myClass.f,x:myClass.tp.x,z:myClass.tp.z,name:myClass.disp,txt:'Dein Klassenzimmer der 7'+myClass.letter+' ('+FN[myClass.f]+').'}]}; curStep=0; updateMissionUI(); },'Klasse 7'+myClass.letter,'Zeigen']);
-  for(const [fi,nm,tx] of [[G,'Pausenverkauf','Pausenverkauf'],[G,'Bibliothek','Bibliothek'],[G,'Erste-Hilfe-Raum','Erste Hilfe'],[G,'Hausmeister','Hausmeister'],[2,'Schulleitung I','Schulleitung'],[2,'Beratungslehrer','Beratungslehrkraft'],[0,'Kletter- und Konditionsraum','Kletterwand'],[2,'Chemie Fachraum','Chemie']]) opts.push(['🧭 Weg: '+tx+' ('+FN[fi]+')',()=>{ closeDlg(); guideTo(fi,nm); },'','Zeigen']);
+  if(myClass) opts.push(['🏫 Wo ist mein Klassenzimmer?',()=>{ closeDlg(); cur={id:'_nav',t:'Wegweiser',d:'',timed:0,steps:[{f:myClass.f,x:myClass.tp.x,z:myClass.tp.z,name:myClass.disp,txt:'Dein Klassenzimmer der '+myClass.cn+' ('+FN[myClass.f]+').'}]}; curStep=0; updateMissionUI(); },'Klasse 7'+myClass.letter,'Zeigen']);
+  for(const [fi,nm,tx] of UMZUG?[[G,'Schulleitung I','Schulleitung (E.48)'],[2,'Lehrer Kommunikation','Lehrkräfte (1.27/1.28)'],[G,'Beratung KJSA','Jugendsozialarbeit KJSA (E.32)'],[G,'Erste-Hilfe-Raum','Erste Hilfe'],[G,'Hausmeister','Hausmeister'],[G,'Schülercafé','Schülercafé (E.16)'],[G,'EDV-Raum I','EDV-Räume'],[3,'OGS / Ganztagesbereich','OGTS (2.29/2.30)'],[0,'Kletter- und Konditionsraum','Kletterwand']]:[[G,'Pausenverkauf','Pausenverkauf'],[G,'Bibliothek','Bibliothek'],[G,'Erste-Hilfe-Raum','Erste Hilfe'],[G,'Hausmeister','Hausmeister'],[2,'Schulleitung I','Schulleitung'],[2,'Beratungslehrer','Beratungslehrkraft'],[0,'Kletter- und Konditionsraum','Kletterwand'],[2,'Chemie Fachraum','Chemie']]) opts.push(['🧭 Weg: '+tx+' ('+FN[fi]+')',()=>{ closeDlg(); guideTo(fi,nm); },'','Zeigen']);
   opts.push(['🧣 Fundsachen',()=>{ dlg('Fundsachen','„In der Kiste liegen: eine Trinkflasche, ein einzelner Turnschuh (Größe 38), drei Mützen und ein Geodreieck. Vermisst du etwas davon?“',[['Nein, danke.',closeDlg,'','Zurück']]); },'','Ansehen']);
   opts.push(['🤒 Ich fühle mich nicht gut',()=>{ closeDlg(); guideTo(G,'Erste-Hilfe-Raum'); toast('„Leg dich kurz im Erste-Hilfe-Raum hin, ich sage deiner Lehrkraft Bescheid.“',3200); },'','Melden']);
-  dlg('Sekretariat','„Grüß dich! Wie kann ich dir helfen?“ – '+(T.brk?'Gerade ist Pause.':'Es läuft die '+T.per+'. Stunde'+(myClass?': Die 7'+myClass.letter+' hat '+subjOf(myClass,T.per)+'.':'.')),opts); }
+  dlg('Sekretariat','„Grüß dich! Wie kann ich dir helfen?“ – '+(T.brk?'Gerade ist Pause.':'Es läuft die '+T.per+'. Stunde'+(myClass?': Die '+myClass.cn+' hat '+subjOf(myClass,T.per)+'.':'.')),opts); }
 
 // ---------------------------------------------------------------- lessons: joining a class means answering a question
 const QZ={Mathematik:[['Wie viel ist 7 · 8?','56','54','63'],['Was ergibt (−3) · (−4)?','12','−12','−7'],['Wie viele Grad hat die Winkelsumme im Dreieck?','180°','360°','90°'],['Was ist 25 % von 80?','20','25','40']],
@@ -1223,7 +1236,7 @@ function findAct(){ if(!me.started||modal()) return null; const T=schoolT(); let
   st(S.bib,3,'Bücher ausleihen oder zurückgeben',library); st(S.sek,3.4,'Im Sekretariat nachfragen',secretary); st(S.sek2,3.4,'Im Sekretariat nachfragen',secretary);
   st(S.sl,3.2,'Mit der Schulleitung sprechen',()=>say(S.sl,pick(['Willkommen am Gymnasium Putzbrunn!','Schön, dass du dich vorstellst. Viel Erfolg!','Bei Fragen hilft dir das Sekretariat nebenan.'])));
   st(S.hm,2.6,'Mit dem Hausmeister sprechen',()=>say(S.hm,pick(LINES.hm)));
-  for(const k of ['ogs','psy','ber','osk','usk']) st(S[k],3,'Ansprechen',()=>say(S[k],pick(['Grüß dich! Komm gern in meine Sprechstunde.','Kann ich dir helfen? Das Sekretariat weiß fast alles.','Einen Moment, ich bin gleich für dich da.'])));
+  for(const k of ['ogs','psy','ber','osk','usk','kjsa','ogts']) st(S[k],3,'Ansprechen',()=>say(S[k],pick(['Grüß dich! Komm gern in meine Sprechstunde.','Kann ich dir helfen? Das Sekretariat weiß fast alles.','Einen Moment, ich bin gleich für dich da.'])));
   const sil=roomBy(G,'Silentium'); if(inRoom(sil,G,0)&&save.books.length) put(0.5,'Im Silentium lesen',readBook,1);
   for(const n of NP){ if(n.kind==='s'||n.kind==='h'||n.sport) continue; const d=near(n.x,n.z,n.y,n.kind==='t'?2.6:1.7); if(d>1e8) continue;
     if(n.kind==='t'){ if(n.c&&n.st===2&&!T.brk) put(d,'Am Unterricht teilnehmen ('+subjOf(n.c,T.per)+')',()=>lesson(n.c),0.4); else put(d,'Lehrkraft ansprechen',()=>say(n,pick(n.vest?LINES.ta:LINES.t)),0.2); }
@@ -1239,7 +1252,7 @@ function lifeTick(dtCapped,now){
   const dt=Math.min(1.2,lifeLast?(now-lifeLast)/1000:dtCapped); lifeLast=now;      // figures keep real time even on slow devices
   const T=schoolT();
   if(lastBrk===null) lastBrk=T.brk;
-  if(T.brk!==lastBrk){ lastBrk=T.brk; if(me.started){ gong(); if(T.brk){ toast('🔔 Gong – Pause! Der Pausenverkauf hat offen.',3600); ambient(); } else toast('🔔 Gong – die '+T.per+'. Stunde beginnt.'+(myClass?' Die 7'+myClass.letter+' hat '+subjOf(myClass,T.per)+' in '+myClass.disp+' ('+FN[myClass.f]+').':''),4600); } }
+  if(T.brk!==lastBrk){ lastBrk=T.brk; if(me.started){ gong(); if(T.brk){ toast(UMZUG?'🔔 Gong – Pause!':'🔔 Gong – Pause! Der Pausenverkauf hat offen.',3600); ambient(); } else toast('🔔 Gong – die '+T.per+'. Stunde beginnt.'+(myClass?' Die '+myClass.cn+' hat '+subjOf(myClass,T.per)+' in '+myClass.disp+' ('+FN[myClass.f]+').':''),4600); } }
   for(const n of NP){
     if(n.path&&(n.kind==='p'||n.kind==='t')&&n.c){
       if(n.st===0){ if(!T.brk&&T.t-BRK>n.dl){ n.st=1; n.pose=0; n.mv=1; n.pi=0; } else if(n.wave>0){ n.wave-=dt; n.dirty=1; } else if(Math.random()<dt*0.02){ n.wave=1.2; n.dirty=1; } }
@@ -1298,8 +1311,45 @@ function rallyeHelp(){ if(!cur||!cur.rallye||cur.rallye.show) return; cur.rallye
 function rallyeStep(){ const R=cur.rallye; R.show=false; tone([659,880],0.1,0.3,0.12);
   if(curStep<cur.steps.length){ toast('✔ Gefunden! Buchstabe „'+R.word[curStep-1]+'“ – weiter zur '+(curStep+1)+'. Stunde.',2800); updateMissionUI(); return; }
   const t=rTime(R), pts=Math.max(20,100-R.help*15); save.score+=pts; persist(); refreshStats(); tone([523,659,784,1047],0.12,0.5,0.15); const g=R.g, h=R.help; me.rallyeDone={g,t,h,word:R.word}; cur=null; updateMissionUI();
-  dlg('🏁 Rallye geschafft!','Jahrgangsstufe '+g+' · Zeit '+t+' · Hilfen '+h+' · Lösungswort: '+R.word+'. Zeig diesen Bildschirm deiner Lehrkraft. (+'+pts+' Punkte)',[['Noch einmal mit neuem Stundenplan',()=>rallyeStart(g),'andere Räume','Start'],['Andere Jahrgangsstufe',rallyeMenu,'','Wählen']]); }
+  dlg('🏁 Rallye geschafft!',(UMZUG?'Klasse ':'Jahrgangsstufe ')+g+' · Zeit '+t+' · Hilfen '+h+' · Lösungswort: '+R.word+'. Zeig diesen Bildschirm deiner Lehrkraft. (+'+pts+' Punkte)',[['Noch einmal mit neuem Stundenplan',()=>rallyeStart(g),'andere Räume','Start'],[UMZUG?'Andere Klasse':'Andere Jahrgangsstufe',()=>rallyeMenu(),'','Wählen']]); }
 $('btnHelp').addEventListener('click',rallyeHelp); $('btnRallye').addEventListener('click',rallyeMenu);
+
+// ---- Teilinbetriebnahme: classes 5A–9B in their real rooms; missions only where the rooms are in use
+function rNo(nos){ const ls=[]; WD.floors.forEach((f,fi)=>{ for(const l of f.labels) if(l[4]&&nos.includes(l[4])&&!l.closed) ls.push([fi,l]); }); if(!ls.length) return null; const [fi,l]=pick(ls);
+  let x=cw(l[1]), z=cw(l[2]); if(standY(x,z,LV[fi])===null){ let ok=false; for(let r=0.25;r<=2.5&&!ok;r+=0.25) for(let k=0;k<12&&!ok;k++){ const a=x+Math.cos(k*0.5236)*r, b=z+Math.sin(k*0.5236)*r; if(standY(a,b,LV[fi])!==null){ x=a; z=b; ok=true; } } } return {f:fi,x,z,name:dispOf(l)}; }
+const KNO={}; for(const k in TIB) if(TIB[k][2]) KNO[TIB[k][2]]=k;
+function ownRoom(){ const c=myClass; if(!c) return null; return {f:c.f,x:c.tp.x,z:c.tp.z,name:c.disp}; }
+function rallyePlanU(cl){ const g=parseInt(cl), own=rNo([KNO[cl]]);
+  const pool=[[g<=7?'Natur und Technik':'Biologie',['1.29','1.30','1.32','1.33']],['Kunst',['2.31','2.34','2.36']],['Musik',['2.2']],['Sport',['TH 1','TH 2','TH 3','TH 4']],['Krankmeldung im Sekretariat abgeben',['E.47']],
+    ['Heft bei den Lehrkräften abgeben',['1.27','1.28']],['Mittagspause',['E.16']],['Intensivierung',null]];
+  if(g>=6) pool.push(['Informatik',['E.45','E.46']]); if(g>=7) pool.push(['Physik',['2.37','2.38','2.40','2.41']]); if(g>=8) pool.push(['Chemie',['1.34','1.35','1.37','1.38']]); if(g<=7) pool.push(['Nachmittag in der OGTS',['2.29','2.30']]);
+  const steps=[]; if(own) steps.push(Object.assign(own,{sub:pick(['Deutsch','Mathematik','Englisch'])}));
+  for(const p of pool.sort(()=>Math.random()-0.5)){ if(steps.length>=6) break; const r=p[1]?rNo(p[1]):rPick(JG[Math.min(g,10)][0],/^Differenzierungszone/,own?[own.x,own.z]:[JG[g][1],JG[g][2]]); if(r&&!steps.some(s=>s.name===r.name)) steps.push(Object.assign(r,{sub:p[0]})); }
+  steps.forEach((s,i)=>{ s.txt=(i+1)+'. Stunde: '+s.sub+' – Raum '+s.name+' ('+FN[s.f]+')'; }); return steps; }
+if(UMZUG){
+  const cBy=cl=>classes.find(c=>c.own&&c.cn===cl);
+  rallyeStart=function(cl){ if(typeof cl==='number') cl=KLASSEN.find(k=>parseInt(k)===cl)||'5A'; const c=cBy(cl); if(c){ myClass=c; save.cls=cl; persist(); }
+    const steps=rallyePlanU(cl); if(steps.length<3) return; closeDlg(); closeMenu(); if(me.cl){ me.third=me.cl.third; me.cl=null; }
+    me.x=cw(WD.spawn[0]); me.z=cw(WD.spawn[1]); me.y=0; me.jy=0; me.vy=0; me.yaw=0; me.pitch=0; const g=parseInt(cl);
+    cur={id:'_rallye',t:'Rallye Klasse '+cl,d:'',timed:0,steps,rallye:{g:cl,word:WORDS[g],help:0,show:false,t0:performance.now()}}; curStep=0; updateMissionUI();
+    dlg('Dein Stundenplan – Klasse '+cl,'Finde die Räume der Reihe nach. Es gibt keine Zielmarkierung: Achte auf Stockwerk, Raumnummern an den Türen und die Karte (K). In jedem Raum bekommst du einen Buchstaben des Lösungsworts. „Hilfe“ zeigt den Weg, wird aber mitgezählt.',
+      steps.map(s=>[s.txt,null,'']).concat([['Start am Eingang Treppenraum II',closeDlg,'Die Zeit läuft ab jetzt.','Los']])); cur.rallye.t0=performance.now(); };
+  rallyeMenu=function(){ dlg('Schulhaus-Rallye','Wähle deine Klasse. Du bekommst einen ausgedachten Stundenplan mit sechs Stunden – jedes Mal mit anderen Fachräumen. Die erste Stunde ist immer in deinem echten Klassenzimmer.',
+    KLASSEN.map(k=>['Klasse '+k,()=>rallyeStart(k),parseInt(k)<=7?'Klassenzimmer im 1. OG':'Klassenzimmer im 2. OG','Start'])); };
+  const old=$('btnRallye'), nb=old.cloneNode(true); old.replaceWith(nb); nb.addEventListener('click',()=>rallyeMenu());
+  // missions for the partial opening: every target is a room that is in use
+  const mk=(id,t,d,list)=>{ const steps=[]; for(const s of list){ const r=s.own?Object.assign({own:1},ownRoom()||{}):rNo(s.no); if(r&&r.name){ Object.assign(r,{txt:s.txt,need:s.need,nt:s.nt}); steps.push(r); } }
+    if(steps.length<2) return null; return {id,t,d,timed:0,steps,want:list.length,prep(){ for(const s of steps) if(s.own){ const o=ownRoom(); if(o) Object.assign(s,o); } }}; };
+  const NEW=[mk('start','Erster Schultag','Melde dich an und finde deinen Platz.',[{no:['E.47'],txt:'Hol im Sekretariat (vorläufig E.47 im EG) deinen Schülerausweis.',need:()=>save.ausweis,nt:'hol im Sekretariat den Ausweis (E)'},{no:['E.48'],txt:'Stell dich kurz bei der Schulleitung vor (E.48, gleich daneben).'},{own:1,txt:'Such dir einen Platz in deinem Klassenzimmer.'}]),
+    mk('kunst','Kunstausstellung','Deine Bilder sollen alle sehen.',[{no:['2.34'],txt:'Hol dein Bild aus Kunst 1 (2.34, OG2).'},{no:['2.32'],txt:'Bau im Holzraum (2.32) einen Rahmen dafür.'},{no:['E.16'],txt:'Häng es im Schülercafé (E.16) auf.'}]),
+    mk('musik','Pausenkonzert','Noten holen, auftreten.',[{no:['2.2'],txt:'Hol die Noten im Musik-Klassenzimmer (2.2, OG2).'},{no:['E.16'],txt:'Spiel ein kleines Pausenkonzert im Schülercafé (E.16).'}]),
+    mk('edv','Digital-Profi','Präsentation vorbereiten.',[{no:['E.45'],txt:'Erstelle deine Folien im EDV-Raum 1 (E.45).'},{no:['E.46'],txt:'Drucke das Handout im EDV-Raum 2 (E.46).'},{own:1,txt:'Präsentiere in deinem Klassenzimmer.'}]),
+    mk('hilfe','Wer hilft mir?','Ansprechpartner kennenlernen.',[{no:['E.32'],txt:'Stell dich bei der Jugendsozialarbeit (KJSA, E.32) vor.'},{no:['2.29','2.30'],txt:'Schau dir die Nachmittagsbetreuung in der OGTS an (OG2).'},{no:['1.27','1.28'],txt:'Gib bei den Lehrkräften (1.27/1.28) einen Zettel ab.'}]),
+    mk('stunde','Mitarbeit','Melde dich im Unterricht.',[{own:1,txt:'Geh in dein Klassenzimmer.'},{own:1,txt:'Beantworte während der Stunde die Frage der Lehrkraft richtig (E bei der Lehrkraft).',need:()=>me.quizOk>0,nt:'antworte der Lehrkraft richtig (E, während der Stunde)'}])].filter(Boolean);
+  for(const id of ['pause']){ const k=MISSIONS.findIndex(x=>x.id===id); if(k>=0) MISSIONS.splice(k,1); }     // no break kiosk during the partial opening
+  for(const m of NEW){ const k=MISSIONS.findIndex(x=>x.id===m.id); if(k>=0) MISSIONS.splice(k,1,m); else if(m.id==='start') MISSIONS.unshift(m); else MISSIONS.push(m); }
+  if(typeof buildMenu==='function') buildMenu(); refreshStats();
+}
 
 // ================================================================ main loop
 let last=performance.now(), sendAcc=0, uiAcc=0, lastF=-1;
@@ -1344,10 +1394,10 @@ function tick(now){ const dt=Math.min(0.1,(now-last)/1000); last=now; step(dt); 
 // ================================================================ start screen
 const colBox=$('colors'); PALETTE.forEach((c,i)=>{ const el=document.createElement('i'); el.style.background='#'+c.toString(16).padStart(6,'0'); if(i===save.color%PALETTE.length) el.className='on'; el.addEventListener('click',()=>{ save.color=i; [...colBox.children].forEach((x,k)=>x.className=k===i?'on':''); myAvatar.userData.shirt.color.setHex(c); }); colBox.append(el); });
 $('nick').value=save.name||'';
-function start(){ { const cv=$('code').value; if(cv&&cheat(cv)) return; } let n=$('nick').value.replace(/[^\p{L}\p{N} _.\-]/gu,'').trim().slice(0,14); if(!n) n='Gast'+Math.floor(100+Math.random()*900); save.name=n; persist(); $('nick').blur(); $('overlay').style.display='none'; me.started=true; try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} refreshStats(); drawMap(); hud(); ambient(); if(UMZUG) me.yaw=0; { const q=/[?#&]rallye=(\d+)/.exec(location.search+location.hash); if(q&&WORDS[+q[1]]) setTimeout(()=>rallyeStart(+q[1]),300); } toast(UMZUG?'Willkommen, '+n+'! Umzugs-Update: Der Flügel mit Verwaltung und Oberstufe ist noch Baustelle. Vor dir liegt der Eingang am Treppenraum II.':'Willkommen, '+n+'! Vor dir liegt der Haupteingang. E = ansprechen/handeln, Leertaste = springen, K = Karte.',6200); }
+function start(){ { const cv=$('code').value; if(cv&&cheat(cv)) return; } let n=$('nick').value.replace(/[^\p{L}\p{N} _.\-]/gu,'').trim().slice(0,14); if(!n) n='Gast'+Math.floor(100+Math.random()*900); save.name=n; persist(); $('nick').blur(); $('overlay').style.display='none'; me.started=true; try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} refreshStats(); drawMap(); hud(); ambient(); if(UMZUG) me.yaw=0; { const q=/[?#&]rallye=(\d+)([a-eA-E]?)/.exec(location.search+location.hash); if(q&&WORDS[+q[1]]){ const k=(q[1]+q[2]).toUpperCase(); setTimeout(()=>rallyeStart(UMZUG&&KLASSEN.includes(k)?k:+q[1]),300); } } toast(UMZUG?'Willkommen, '+n+'! Umzugs-Update: Der Flügel mit Aula und Oberstufe ist noch Baustelle. Vor dir liegt der Eingang am Treppenraum II. Sekretariat und Schulleitung findest du vorläufig in E.47 und E.48.':'Willkommen, '+n+'! Vor dir liegt der Haupteingang. E = ansprechen/handeln, Leertaste = springen, K = Karte.',6200); }
 $('go').addEventListener('click',start); $('nick').addEventListener('keydown',e=>{ if(e.key==='Enter') start(); });
 updateMissionUI(); refreshStats(); initNet(); requestAnimationFrame(tick); booted=true;
-window.__game={me,save,Net,stars,STAIRS,MISSIONS,LV,C,G,FN,canStand,standY,moveBy,startMission,peerAv,floorOf,WD,grid,inside,isInside,camera,NP,LIFE,STAFF,classes,HM,LIT,BINS,KW,SP,RAMP,SEATS,COUNTERS,buy,eat,bag,library,secretary,lesson,doAct,findAct,dropLitter,jump,climbStart,schoolT,cheat,dispOf,SCI,PLATES,rallyeStart,rallyePlan,rallyeHelp,rallyeMenu,cur:()=>cur,GATES,TRB,UMZUG,inZone,setT:v=>{ tOff=v-((Date.now()/1000)%CYC); },nodes:()=>NN,act:()=>act,closeDlg,step,keys};
+window.__game={me,save,Net,stars,STAIRS,MISSIONS,LV,C,G,FN,canStand,standY,moveBy,startMission,peerAv,floorOf,WD,grid,inside,isInside,camera,NP,LIFE,STAFF,classes,HM,LIT,BINS,KW,SP,RAMP,SEATS,COUNTERS,buy,eat,bag,library,secretary,lesson,doAct,findAct,dropLitter,jump,climbStart,schoolT,cheat,dispOf,SCI,PLATES,TIB,KLASSEN,myC:()=>myClass,rallyeStart,rallyePlan,rallyeHelp,rallyeMenu,cur:()=>cur,GATES,TRB,UMZUG,inZone,setT:v=>{ tOff=v-((Date.now()/1000)%CYC); },nodes:()=>NN,act:()=>act,closeDlg,step,keys};
 })();
 </script>
 </body>
