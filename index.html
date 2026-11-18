@@ -436,18 +436,24 @@ WD.floors.forEach((f,i)=>{
   // timber layers on the outside of the building are the sun shading of the facade: open lamellas, glazing behind them
   // a timber wall is facade when, looking out from its long side, you reach the outside or a balcony parapet without crossing a solid wall
   const solidM=new Uint8Array(GW*GH), edgeM=new Uint8Array(GW*GH); fillRects(solidM,f.conc,1); fillRects(solidM,f.dry,1); fillRects(solidM,f.dryw,1); fillRects(edgeM,f.ring||[],1); fillRects(edgeM,f.rail||[],1);
-  const isExt=r=>{ if(i===0) return false; const hor=r[2]>=r[3];
-    for(const t of [0.15,0.5,0.85]) for(const dir of [-1,1]){ let x=hor?Math.floor(r[0]+r[2]*t):(dir>0?r[0]+r[2]:r[0]-1), y=hor?(dir>0?r[1]+r[3]:r[1]-1):Math.floor(r[1]+r[3]*t), run=0;
-      for(let s=0;s<26;s++){ if(x<0||y<0||x>=GW||y>=GH) return true; const k=y*GW+x;
-        if(edgeM[k]) return true; if(!inside[i][k]&&!grid[i][k]) return true;
+  // 1: the timber layer at a balcony edge or on the outside → sun-shading lamellas; 2: wall between corridor and escape balcony → glazing; 0: timber wall
+  const extKind=r=>{ if(i<2) return 0; const hor=r[2]>=r[3]; let best=0;
+    for(const t of [0.15,0.5,0.85]) for(const dir of [-1,1]){ let x=hor?Math.floor(r[0]+r[2]*t):(dir>0?r[0]+r[2]:r[0]-1), y=hor?(dir>0?r[1]+r[3]:r[1]-1):Math.floor(r[1]+r[3]*t), run=0, v=0;
+      for(let s=0;s<26;s++){ if(x<0||y<0||x>=GW||y>=GH){ v=1; break; } const k=y*GW+x;
+        if(edgeM[k]||(!inside[i][k]&&!grid[i][k])){ v=s<=4?1:2; break; }
         if(grid[i][k]){ if(solidM[k]) break; if(++run>3) break; } else run=0;
-        if(hor) y+=dir; else x+=dir; } }
-    return false; };
-  const wExt=[], wIn=[]; for(const r of f.wood) (isExt(r)?wExt:wIn).push(r);
+        if(hor) y+=dir; else x+=dir; }
+      if(v===1) return 1; if(v) best=v; }
+    return best; };
+  const wExt=[], wIn=[], wGl=[]; for(const r of f.wood){ const k=extKind(r); (k===1?wExt:k===2?wGl:wIn).push(r); }
   add(f.conc,M.conc,1/2.4); add(f.dry,M.dry,1/1.3); add(f.dryw,M.white,1); add(wIn,M.wood,1/1.25);
   { const gl=new GB(), gp=new GB(); for(const r of wExt){ const b=R(r), t=wt(b); gl.box(b.x0,y0,b.z0,b.x1,t,b.z1,1/0.8,true,'xXzZ'); gl.box(b.x0,t-0.05,b.z0,b.x1,t,b.z1,1,false,'Y');
       const lx=b.x1-b.x0>b.z1-b.z0; if(lx){ const z=(b.z0+b.z1)/2; gp.box(b.x0,y0+0.05,z-0.01,b.x1,t-0.05,z+0.01,1,false,'zZ'); } else { const x=(b.x0+b.x1)/2; gp.box(x-0.01,y0+0.05,b.z0,x+0.01,t-0.05,b.z1,1,false,'xX'); } }
     gl.mesh(M.lamella); const gm=gp.mesh(M.glass); if(gm) gm.renderOrder=2; }
+  { const gg=new GB(), gf=new GB(); for(const r of wGl){ const b=R(r), t=wt(b); gf.box(b.x0,y0,b.z0,b.x1,y0+0.12,b.z1,1,false,'xXzZY'); gf.box(b.x0,t-0.34,b.z0,b.x1,t,b.z1,1,false,'xXzZy');
+      gg.box(b.x0,y0+0.12,b.z0,b.x1,t-0.34,b.z1,1,false,'xXzZ'); const lx=b.x1-b.x0, lz=b.z1-b.z0, L=Math.max(lx,lz), n=Math.floor(L/1.45);
+      for(let k=1;k<=n;k++){ const t0=k*L/(n+1); if(lx>lz) gf.box(b.x0+t0-0.04,y0+0.12,b.z0,b.x0+t0+0.04,t-0.34,b.z1,1,false,'xXzZ'); else gf.box(b.x0,y0+0.12,b.z0+t0-0.04,b.x1,t-0.34,b.z0+t0+0.04,1,false,'xXzZ'); } }
+    gf.mesh(M.door); const gm2=gg.mesh(M.glass); if(gm2) gm2.renderOrder=2; }
   // glazing: sill, head and posts in timber, glass in between
   const gg=new GB(), gf=new GB();
   for(const r of f.glass){ const b=R(r), t=wt(b); gf.box(b.x0,y0,b.z0,b.x1,y0+0.12,b.z1,1,false,'xXzZY'); gf.box(b.x0,t-0.34,b.z0,b.x1,t,b.z1,1,false,'xXzZy');

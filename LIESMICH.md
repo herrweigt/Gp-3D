@@ -59,6 +59,6 @@ Bitte die Klasse anweisen, Fantasienamen zu verwenden. Vor dem Einsatz mit Schü
 - WCs: die im Plan eingezeichneten WCs und Urinale sind als Keramik dargestellt, Kabinentrennwände als 2 m hohe Platten, dazu Waschbecken mit Spiegel.
 - Technik-, Lüftungs-, Heizungs-, EDV/ELT-, Lager- und Reinigungsräume sind nur für Lehrkräfte: Code `LEHRKRAFT` (Startseite oder Tasche) schaltet den Lehrkraft-Modus ein und wieder aus. An den Türen hängt „🔒 Nur Lehrkräfte“.
 - Ansprechen: Antwort erscheint als Untertitel unten im Bild mit Name und Klasse; Schülerinnen und Schüler, Lehrkräfte und Personal antworten passend zu Pause, Unterricht, Mittagspause und Ort und geben auf Nachfrage Wegtipps zum aktuellen Ziel.
-- Sonnenschutz auch an Flurwänden hinter den Fluchtbalkonen (Nordseite 1. und 2. OG): Blick zur Turnhalle frei.
+- Sonnenschutz-Lamellen nur im 1. und 2. OG an der Außenkante; die Wand zwischen Flur und Fluchtbalkon ist verglast (Blick zur Turnhalle frei). Im EG bleiben die Holzwände.
 - Fluchtbalkone werden von den Figuren nicht mehr benutzt; Spielende dürfen sie weiterhin betreten.
 - Jungen- und Herren-WCs: Urinale mit Trennwänden statt WCs, wo im Plan keine Kabine darum steht.
