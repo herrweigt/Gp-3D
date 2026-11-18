@@ -52,3 +52,10 @@ Bitte die Klasse anweisen, Fantasienamen zu verwenden. Vor dem Einsatz mit Schü
 - Rallye: Auswahl nach Klasse (5A bis 9B). Die erste Stunde ist immer im echten Klassenzimmer, die übrigen fünf werden aus den genutzten Fachräumen gewürfelt. Direktlink: `?rallye=7b`.
 - Schultag: nach der 6. Stunde folgt eine Mittagspause von 5 Minuten (sonst Pausen 2 Minuten, Stunden 4 Minuten); ein ganzer Schultag dauert 39 Minuten. Die Küchen-Ausgabe der Mensa (E.17) ist nur in der Mittagspause besetzt.
 - Erste Hilfe ist im Umzugs-Update im Sekretariat (E.47); E.28 ist als ungenutzt beschildert.
+
+## Fassade, WCs, Technikräume, Gespräche (18.11.2026)
+
+- Die äußere Holzschicht der Fassade ist jetzt ein offener Lamellen-Sonnenschutz mit Verglasung dahinter: Von innen sieht man das Außengelände.
+- WCs: die im Plan eingezeichneten WCs und Urinale sind als Keramik dargestellt, Kabinentrennwände als 2 m hohe Platten, dazu Waschbecken mit Spiegel.
+- Technik-, Lüftungs-, Heizungs-, EDV/ELT-, Lager- und Reinigungsräume sind nur für Lehrkräfte: Code `LEHRKRAFT` (Startseite oder Tasche) schaltet den Lehrkraft-Modus ein und wieder aus. An den Türen hängt „🔒 Nur Lehrkräfte“.
+- Ansprechen: Antwort erscheint als Untertitel unten im Bild mit Name und Klasse; Schülerinnen und Schüler, Lehrkräfte und Personal antworten passend zu Pause, Unterricht, Mittagspause und Ort und geben auf Nachfrage Wegtipps zum aktuellen Ziel.
