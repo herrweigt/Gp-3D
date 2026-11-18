@@ -62,3 +62,10 @@ Bitte die Klasse anweisen, Fantasienamen zu verwenden. Vor dem Einsatz mit Schü
 - Sonnenschutz-Lamellen nur im 1. und 2. OG an der Außenkante; die Wand zwischen Flur und Fluchtbalkon ist verglast (Blick zur Turnhalle frei). Im EG bleiben die Holzwände.
 - Fluchtbalkone werden von den Figuren nicht mehr benutzt; Spielende dürfen sie weiterhin betreten.
 - Jungen- und Herren-WCs: Urinale mit Trennwänden statt WCs, wo im Plan keine Kabine darum steht.
+
+## Easter Eggs, Tafeln, Start (18.11.2026)
+
+- 21 Easter Eggs; Zähler und Liste der gefundenen in der Tasche (B). Einige hängen an der echten Uhrzeit (0–1 Uhr, 22–5 Uhr).
+- Tafeln: weiß, über die ganze Breite der fenster- und türlosen Wand; Tische und Lehrkraft richten sich danach aus.
+- Umzugs-Update: Start auf dem Platz westlich der Fahrradständer, 35 m vor dem Eingang Treppenraum II (gelbes Schild).
+- Codes auf der Startseite (LEHRKRAFT, GOTTMODUS) starten das Spiel jetzt direkt mit.

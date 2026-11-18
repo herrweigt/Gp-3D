@@ -220,7 +220,7 @@ if(UMZUG){
   // room use during the partial opening: [internal type or null = keep, sign text, class]
   for(const f of WD.floors){ for(const r of f.rooms){ const t=r.no&&TIB[r.no]; if(t){ if(t[0]) r[0]=t[0]; r.disp=t[1]; r.cls=t[2]||null; } else if(r[0]==='Klassenzimmer'&&/^Klassenr/.test(r.disp||'')&&!r.closed) r.disp='Klassenraum (derzeit frei)'; }
     for(const l of f.labels){ const t=l[4]&&TIB[l[4]]; if(t){ if(t[0]) l[0]=t[0]; l[3]=t[1]; } else if(l[0]==='Klassenzimmer'&&/^Klassenr/.test(l[3]||'')&&!l.closed) l[3]='Klassenraum (derzeit frei)'; } }
-  WD.spawn=[Math.round(75.4/C),Math.round(38.5/C)];       // entrance during the move: stair core TR E.2 on the north side
+  WD.spawn=[Math.round(40/C),Math.round(38.6/C)];       // start on the open square west of the north lane; the entrance (stair core TR E.2) is 35 m ahead
 }
 const HB=WD.hallb, inHallCell=(cx,cy)=> cx>=HB[0]&&cx<HB[2]&&cy>=HB[1]&&cy<HB[3];
 const VOIDS=WD.halls.concat([WD.kletter]);
@@ -528,7 +528,9 @@ function seat(F,u,v,dir,h){ const p=F.pt(u,v), a=dir===1?F.du:dir===2?[-F.dv[0],
 function chair(F,u,v,dir){ if(!F.put('fdark',u,v,u+0.4,v+0.4,0.42,0.46,0)) return; seat(F,u+0.2,v+0.2,dir||0,0.46); F.raw('metal',u+0.15,v+0.15,u+0.25,v+0.25,0,0.42);
   if(dir===1) F.raw('fdark',u,v,u+0.04,v+0.4,0.46,0.85); else if(dir===2) F.raw('fdark',u,v+0.36,u+0.4,v+0.4,0.46,0.85); else if(dir===3) F.raw('fdark',u,v,u+0.4,v+0.04,0.46,0.85); else F.raw('fdark',u+0.36,v,u+0.4,v+0.4,0.46,0.85); }
 function stool(F,u,v,dir){ if(F.put('fdark',u,v,u+0.34,v+0.34,0.5,0.55,0)){ F.raw('metal',u+0.13,v+0.13,u+0.21,v+0.21,0,0.5); seat(F,u+0.17,v+0.17,dir||0,0.55); } }
-function board(F,white){ const c=F.Wd/2; F.put(white?'fw':'fgreen',0.03,c-2,0.09,c+2,0.9,2.15,0); F.put('fw',0.03,c-3.05,0.07,c-2.03,0.9,2.15,0); F.put('fw',0.03,c+2.03,0.07,c+3.05,0.9,2.15,0); }
+function board(F){ // white boards across the whole front wall, interrupted only where a door is
+  if(F.put('fw',0.03,0.25,0.09,F.Wd-0.25,0.85,2.2,0)){ F.raw('fgrey',0.02,0.25,0.12,F.Wd-0.25,0.82,0.85); return; }
+  let v=0.25; while(v<F.Wd-0.5){ let e=v; while(e+0.25<=F.Wd-0.25&&F.put('fw',0.03,e,0.09,e+0.25,0.85,2.2,0)) e+=0.25; if(e>v) F.raw('fgrey',0.02,v,0.12,e,0.82,0.85); v=e+0.25; } }
 function media(F){ for(const v of [F.Wd*0.3,F.Wd*0.7]){ if(F.D<6) continue; F.put('fgrey',3.2,v-0.22,F.D-1.6,v+0.22,2.25,2.4,0); for(let u=3.5;u<F.D-1.8;u+=2.2) F.put('metal',u,v-0.05,u+0.1,v+0.05,2.4,F.top,0); } }
 function tableSet(F,u,v){ if(!F.put('fwood',u,v,u+0.8,v+1.6,0.70,0.74,1)) return; F.raw('metal',u+0.35,v+0.1,u+0.45,v+0.2,0,0.7); F.raw('metal',u+0.35,v+1.4,u+0.45,v+1.5,0,0.7);
   for(const dv of [0.2,1.0]){ chair(F,u-0.5,v+dv,1); chair(F,u+0.9,v+dv,0); } }
@@ -609,7 +611,10 @@ GEN.sci=function(F,kind){ const D=F.D, W=F.Wd, top=F.top;
   if(bands.length){ const a=rows?bands[0][0]:0.7, b=bands[bands.length-1][1]; F.raw('folive',2.95,a,3.25,b,2.12,2.24); }
 };
 
-function frontOf(r){ const g=r[6], xl=r[3]-r[1], zl=r[4]-r[2]; if(g>=0) return (g+1)%4; return xl>zl?3:0; }
+function frontOf(r){ const g=r[6], xl=r[3]-r[1], zl=r[4]-r[2]; if(g<0) return xl>zl?3:0;
+  // the board wall: no windows and no doors; long walls first, then the walls next to the window wall
+  const line=[r[2],r[3],r[4],r[1]], dn=s=>r[7].filter(d=>s===0||s===2?Math.abs(d[1]-line[s])<7:Math.abs(d[0]-line[s])<7).length, len=s=>s===0||s===2?xl:zl;
+  let best=-1, bs=1e9; for(let s=0;s<4;s++){ if(s===g) continue; const sc=dn(s)*100-len(s)*C+(s===(g+2)%4?5:0); if(sc<bs){ bs=sc; best=s; } } return best; }
 // a fixture in a boys' or men's toilet is a urinal unless a cubicle partition (longer than 1 m) stands right beside it
 function isUrinal(q){ const ax=q.back<2; for(const p of PART){ if(p.fi!==q.fi) continue;
     const lat=ax?Math.max(p.x0-q.x1,q.x0-p.x1):Math.max(p.y0-q.y1,q.y0-p.y1), ov=ax?Math.min(p.y1,q.y1+10)-Math.max(p.y0,q.y0-2):Math.min(p.x1,q.x1+10)-Math.max(p.x0,q.x0-2), len=(ax?p.y1-p.y0:p.x1-p.x0)+1;
@@ -844,6 +849,8 @@ if(UMZUG){ const fm=new THREE.MeshLambertMaterial({color:0xb8c0c8,transparent:tr
 
 // lock signs at the doors of teacher-only rooms
 for(const k of LOCKS){ const sp=textSprite('🔒 Nur Lehrkräfte','rgba(208,68,47,.95)','#ffffff',0.2); sp.position.set(k[1],LV[k[0]]+1.95,k[2]); floorGroups[k[0]].add(sp); }
+
+if(UMZUG){ const s=textSprite('➜ Eingang · Treppenraum II','rgba(255,201,60,.97)','#14202e',1.0); s.position.set(75.4,3.4,38.2); floorGroups[G].add(s); }
 
 // room number plates at the corridor doors
 const PLATES={n:0};
@@ -1124,6 +1131,7 @@ function whereText(){ let best=null,bd=9; for(const l of WD.floors[me.f].labels)
   const out=me.f===G&&!isInside(G,me.x,me.z); return FN[me.f]+' · '+(onStair?'Treppe':out?((me.x>156||me.x>113&&me.z<31)?'Sportgelände':me.x<RAMP.open&&me.z>RAMP.z0-1&&me.z<RAMP.z1+1&&me.x>RAMP.x0-4?'Tiefgaragenzufahrt':isInside(G+1,me.x,me.z)?'Unter dem Obergeschoss':'Schulgelände'):best?best:'Flur'); }
 
 // ================================================================ school life: clock, gong, crowd, staff, shop, library, litter
+const EGGACT=[];
 const CYC=360, BRK=120, LES=CYC-BRK, LUNCH=300, DAY=LUNCH+6*LES+5*BRK; let tOff=0;     // a day: lunch break (after lesson 6 of the day before), then lessons 1–6 with breaks in between
 function schoolT(){ const s=Date.now()/1000+tOff, d=s%DAY;
   if(d<LUNCH) return {t:d,brk:true,lunch:true,left:LUNCH-d,per:1};
@@ -1224,6 +1232,7 @@ function talkTo(n){ const T=schoolT(), recent=n.said||(n.said=[]), H=hintFor(n),
     if(n.pose===1&&!n.c) return say(n,choose(L.roomT,L.genT));
     return say(n,choose(T.lunch?L.lunchT:null,n.vest?L.dutyT:null,L.genT,[choose(L.greetT)+' '+choose(L.genT)])); }
   // pupils
+  if(Math.random()<EGG.absurdP){ n.met=1; say(n,pick(ABSURD)); egg('absurd'); return; }
   if(n.st===2&&!T.brk) return say(n,choose(L.lessonP));
   if(H&&Math.random()<0.5) return say(n,pick(['Klar, helf ich dir: ','Ah, warte: ',''])+H);
   if(!n.met){ n.met=1; return say(n,choose(L.greetP)+' '+choose(L.introP(n))); }
@@ -1366,6 +1375,7 @@ function shop(list,title,hello){ const T=schoolT(); const opts=list.map(id=>{ co
   dlg(title,(hello||(T.brk?'Servus! Was darf’s sein?':'Hast du nicht gerade Unterricht? Na gut – was darf’s sein?'))+(save.god?' · Gottmodus: alles gratis.':' · Du hast '+euro(save.money)+'.'),opts); }
 function bag(){ if(!me.started) return; const opts=save.inv.map((id,k)=>[ITEMS[id][3]+' '+ITEMS[id][0],()=>{ eat(k); bag(); },'+'+ITEMS[id][2]+' % Energie','Essen']);
   if(save.trash) opts.push(['🗑 Verpackungsmüll ('+save.trash+')',()=>{ dropLitter(); closeDlg(); },'gehört in einen Mülleimer (E am Eimer)','Fallen lassen']);
+  opts.push(['🥚 Easter Eggs: '+save.eggs.length+' von '+EGGN,()=>{ dlg('Easter Eggs',save.eggs.length?'Gefunden:':'Noch keins gefunden. Es gibt '+EGGN+' Stück – im Haus, auf dem Gelände und zu bestimmten Uhrzeiten.',save.eggs.map(id=>['🥚 '+EGGS[id][0],null,EGGS[id][1]]).concat([['Zurück',bag,'','OK']])); },save.ducks?'🦆 Gummienten: '+save.ducks:'','Ansehen']);
   if(save.pfand) opts.push(['♻️ Pfandflaschen ('+save.pfand+')',null,'am Pausenverkauf zurückgeben']);
   for(const b of save.books) opts.push(['📖 '+BOOKS[b],null,save.read.includes(b)?'gelesen – bitte zurückgeben':'im Silentium lesen (E)']);
   dlg('Deine Tasche',(save.ausweis?'Schülerausweis: vorhanden. ':'Noch kein Schülerausweis (Sekretariat, OG1). ')+'Geld: '+euro(save.money)+' · Energie: '+Math.round(save.energy)+' %',opts.length?opts:[['Die Tasche ist leer.',null,'Am Pausenverkauf im EG gibt es Brezen & Co.']]);
@@ -1449,7 +1459,7 @@ function findAct(){ if(!me.started||modal()) return null; const T=schoolT(); let
   if(me.cl) return {label:'Loslassen und abseilen',fn:()=>{ me.cl.drop=1; }};
   if(me.f===0&&Math.abs(me.y-LV[0])<0.3&&me.x>KW.x-1.5&&me.z>KW.z0&&me.z<KW.z1) put(0,'An der Kletterwand klettern',climbStart,3);
   for(const l of LIT){ const d=near(l.x,l.z,l.y,1.6); if(d<1e8) put(d,'Müll aufheben',()=>{ const mine=l.mine; rmLitter(l); save.trash++; me.picked=(me.picked||0)+1; if(!mine){ save.score+=1; refreshStats(); } persist(); hud(); toast(mine?'Aufgehoben. Ab damit in den Eimer!':'Aufgehoben. +1 – ab damit in den Eimer!',1500); },1); }
-  if(save.trash) for(const b of BINS){ const d=near(b[1],b[2],LV[b[0]],1.7); if(d<1e8) put(d,'Müll wegwerfen ('+save.trash+')',()=>{ const n=save.trash; save.trash=0; save.score+=2*n; me.binned=(me.binned||0)+n; persist(); hud(); refreshStats(); toast('Sauber! '+n+' × Müll entsorgt: +'+2*n,1800); tone([523,659],0.08,0.2,0.1); },0.5); }
+  if(save.trash) for(const b of BINS){ const d=near(b[1],b[2],LV[b[0]],1.7); if(d<1e8) put(d,'Müll wegwerfen ('+save.trash+')',()=>{ const n=save.trash; save.trash=0; save.score+=2*n; me.binned=(me.binned||0)+n; save.binTot=(save.binTot||0)+n; persist(); hud(); refreshStats(); toast('Sauber! '+n+' × Müll entsorgt: +'+2*n,1800); tone([523,659],0.08,0.2,0.1); },0.5); }
   const S=STAFF, st=(n,r,label,fn)=>{ if(n){ const d=near(n.x,n.z,n.y,r); if(d<1e8) put(d,label,fn,0.6); } };
   st(S.kiosk,3.4,'Am Pausenverkauf einkaufen',()=>shop(KIOSK,'Pausenverkauf')); if(S.koch&&!S.koch.hide) st(S.koch,3.4,'An der Küchen-Ausgabe bestellen',()=>shop(['tag','salat','wasser','schorle'],'Küchen-Ausgabe (Mensa)','Mahlzeit! Heute gibt es Käsespätzle.'));
   else if(S.koch){ const d=near(S.koch.home.x,S.koch.home.z,S.koch.home.y,3.4); if(d<1e8){ const m=Math.ceil(toLunch()/60); put(d,'Küchen-Ausgabe: geschlossen',()=>dlg('Küchen-Ausgabe (Mensa)','Die Küchen-Ausgabe hat nur in der Mittagspause nach der 6. Stunde geöffnet – die nächste beginnt in etwa '+m+' Minute'+(m===1?'':'n')+'.',[]),0.6); } }
@@ -1461,6 +1471,7 @@ function findAct(){ if(!me.started||modal()) return null; const T=schoolT(); let
   for(const n of NP){ if(n.kind==='s'||n.kind==='h'||n.sport||n.hide) continue; const d=near(n.x,n.z,n.y,n.kind==='t'?2.6:1.7); if(d>1e8) continue;
     if(n.kind==='t'){ if(n.c&&n.st===2&&!T.brk) put(d,'Am Unterricht teilnehmen ('+subjOf(n.c,T.per)+')',()=>lesson(n.c),0.4); else put(d,nameOf(n)+' ansprechen',()=>talkTo(n),0.2); }
     else if(n.kind==='p'||n.kind==='x') put(d,nameOf(n)+' ansprechen',()=>talkTo(n)); }
+  for(const e of EGGACT){ if(e.f!==me.f||(e.when&&!e.when())) continue; const d=near(e.x,e.z,e.y,e.r||1.8); if(d<1e8) put(d,typeof e.label==='function'?e.label():e.label,e.fn,e.w||0.7); }
   return best; }
 function doAct(){ if(!me.started) return; if(act&&act.fn){ const f=act.fn; act=null; $('act').style.display='none'; f(); } }
 $('act').addEventListener('click',doAct); $('btnAct').addEventListener('click',doAct); $('btnBag').addEventListener('click',bag); $('btnJump').addEventListener('click',()=>jump());
@@ -1574,6 +1585,162 @@ if(UMZUG){
   if(typeof buildMenu==='function') buildMenu(); refreshStats();
 }
 
+// ================================================================ Easter Eggs (21)
+const EGGS={geist:['Das Geisterzimmer','Zwischen 0 und 1 Uhr hat 1.26 Unterricht – nur nicht mit Lebenden.'],werkstatt:['Projekt Vertretungsplan 2.0','Ein Roboter in der Hausmeister-Werkstatt.'],
+  schacht:['Der Lüftungsschacht','Hinter dem Gitter an der Kletterwand.'],ufo:['Besuch auf dem Hallendach','Nachts auf dem Dach der Turnhalle 4.'],fehlgong:['Der Fehlgong','Klatschen (G) im Lehrerzimmer genau beim Gong.'],
+  klopf:['Klopf, klopf','Eine Tür im UG mit einem Klopfcode.'],sprint:['Nicht ganz sauber','100 m unter 11 Sekunden.'],besen:['Der goldene Besen','50 Mal Müll in den Eimer geworfen.'],
+  ente:['Gummiente','Irgendwo im Haus sitzt eine Ente.'],absurd:['Der Mathe-Hase','Eine Schülerantwort von 500.'],delorean:['Reserviert für 2045','Ganz hinten in der Tiefgarage.'],
+  konami:['Regenbogen-Pulli','↑ ↑ ↓ ↓ ← → ← → B A'],haende:['Hygiene-Held','Zehn Mal Hände gewaschen.'],hund:['Schulhund Bruno','Bruno streicheln.'],zen:['Om','Eine Minute lang ganz still stehen.'],
+  klee:['Glücksklee','Im Grünen Klassenzimmer.'],echo:['Echo','Rufen (G) in der Tiefgarage.'],hop:['Bunnyhop','Beim Rennen im richtigen Moment springen.'],katze:['Schrödingers Katze','Eine Kiste in der Physik-Sammlung.'],
+  knochen:['Herr Knochen','Das Skelett in der Biologie-Sammlung.'],punkt:['Pünktlichkeits-Medaille','Drei Mal beim Gong schon im eigenen Klassenzimmer.']};
+const EGGN=Object.keys(EGGS).length;
+for(const k of ['eggs']) if(!Array.isArray(save[k])) save[k]=[];
+for(const k of ['ducks','binTot','wash','punct']) if(typeof save[k]!=='number'||!isFinite(save[k])) save[k]=0;
+const EGG={hour:null,absurdP:1/500,list:EGGS,act:EGGACT};
+const hourNow=()=>EGG.hour!==null?EGG.hour:new Date().getHours();
+function egg(id){ if(save.eggs.includes(id)) return false; save.eggs.push(id); save.score+=20; persist(); refreshStats(); hud();
+  tone([784,988,1175,1568],0.09,0.35,0.13); toast('🥚 Easter Egg gefunden: „'+EGGS[id][0]+'“ ('+save.eggs.length+'/'+EGGN+') +20',3800); return true; }
+function sayAs(name,text,ms){ $('talkN').textContent=name+': '; $('talkT').textContent=text; $('talk').style.display='block'; clearTimeout(sayAs.t); sayAs.t=setTimeout(()=>{ if(!talk) $('talk').style.display='none'; },ms||Math.max(3500,text.length*60)); }
+const EM=(c,o)=>new THREE.MeshLambertMaterial(Object.assign({color:c},o||{}));
+function eBox(g,mat,w,h,d,x,y,z){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat); m.position.set(x,y,z); g.add(m); return m; }
+function spotNear(fi,x,z,R,allowRestr){ for(let r=0;r<=(R||6);r+=0.25) for(let k=0;k<(r?Math.ceil(r*8):1);k++){ const a=k/(r?Math.ceil(r*8):1)*Math.PI*2, px=x+Math.cos(a)*r, pz=z+Math.sin(a)*r;
+    if(standY(px,pz,LV[fi])===null&&!(allowRestr&&RESTR[fi]&&RESTR[fi][Math.floor(pz/C)*GW+Math.floor(px/C)])) continue; if(!allowRestr&&RESTR[fi]&&RESTR[fi][Math.floor(pz/C)*GW+Math.floor(px/C)]) continue; return [px,pz]; } return null; }
+const labFind=(fi,fn)=>WD.floors[fi].labels.find(l=>!l.closed&&fn(l));
+const nearL=(fi,fn,r)=>{ if(me.f!==fi) return false; for(const l of WD.floors[fi].labels) if(!l.closed&&fn(l)&&Math.hypot(cw(l[1])-me.x,cw(l[2])-me.z)<r) return true; return false; };
+let eggT=0;
+
+// ---- 1 ghost classroom (0–1 h): see-through class on the real chairs of 1.26
+const GHOST={g:new THREE.Group(),cells:null}; { const l=WD.floors[2].labels.find(l=>l[4]==='1.26'&&!l.closed);
+  if(l){ const A=roomCells(2,l[1],l[2],9000); GHOST.cells=A&&A.cells; const gm=new THREE.MeshBasicMaterial({color:0xd8ecff,transparent:true,opacity:.33,depthWrite:false});
+    const ss=SEATS.filter(s=>s.r&&s.r.no==='1.26').slice(0,16);
+    for(const s of ss){ const p=new THREE.Group(); eBox(p,gm,0.42,0.55,0.24,0,s.h+0.35,0); const hd=new THREE.Mesh(new THREE.SphereGeometry(0.17,10,8),gm); hd.position.y=s.h+0.82; p.add(hd); p.position.set(s.x,LV[2],s.z); p.rotation.y=s.rot; GHOST.g.add(p); }
+    if(ss.length){ const t=new THREE.Group(); eBox(t,gm,0.46,0.7,0.26,0,1.15,0); const hd=new THREE.Mesh(new THREE.SphereGeometry(0.19,10,8),gm); hd.position.y=1.7; t.add(hd); const sp=spotNear(2,cw(l[1]),cw(l[2]),4); if(sp){ t.position.set(sp[0],LV[2],sp[1]); GHOST.g.add(t); } }
+    GHOST.g.visible=false; floorGroups[2].add(GHOST.g); } }
+
+// ---- 2 robot in the caretaker's workshop (teachers only)
+{ const l=labFind(G,l=>l[0]==='Hausmeister-Werkstatt'); const sp=l&&spotNear(G,cw(l[1]),cw(l[2]),5,true);
+  if(sp){ const r=new THREE.Group(), gr=EM(0x9aa3ad), dk=EM(0x2e3136), ey=new THREE.MeshBasicMaterial({color:0x40e0ff});
+    eBox(r,gr,0.7,0.8,0.5,0,0.9,0); eBox(r,gr,0.5,0.4,0.4,0,1.55,0); eBox(r,ey,0.1,0.06,0.02,-0.1,1.6,0.21); eBox(r,ey,0.1,0.06,0.02,0.1,1.6,0.21); eBox(r,dk,0.04,0.3,0.04,0,1.9,0); eBox(r,EM(0xd0442f),0.1,0.1,0.1,0,2.07,0);
+    eBox(r,gr,0.14,0.6,0.14,-0.45,0.9,0.05).rotation.z=0.5; eBox(r,dk,0.2,0.5,0.2,-0.18,0.25,0); eBox(r,dk,0.2,0.5,0.2,0.18,0.25,0); eBox(r,EM(0xe9b824),0.5,0.28,0.02,0,0.95,0.26);
+    r.position.set(sp[0],0,sp[1]); r.rotation.y=Math.random()*6; floorGroups[G].add(r);
+    const s=textSprite('Projekt Vertretungsplan 2.0','rgba(233,184,36,.95)','#14202e',0.2); s.position.set(sp[0],2.45,sp[1]); floorGroups[G].add(s);
+    EGGACT.push({f:G,x:sp[0],z:sp[1],y:0,r:2.4,label:'Roboter ansehen',fn:()=>{ sayAs('Roboter','Beep. Vertretungsplan wird berechnet … 3 % … Fehler: Zu viele Lehrkräfte krank. Beep.'); egg('werkstatt'); }}); } }
+
+// ---- 3 vent grille next to the climbing wall
+if(KW){ const z=KW.z1-0.75, x=KW.x+0.02, gg=new THREE.Group(), mt=EM(0x6b7178); gg.position.set(x,LV[0],z);
+  for(let k=0;k<6;k++) eBox(gg,mt,0.03,0.04,0.7,-0.03,0.12+k*0.09,0); eBox(gg,EM(0x1c1f23),0.02,0.6,0.72,0.0,0.36,0); floorGroups[0].add(gg);
+  EGGACT.push({f:0,x:KW.x-0.7,z,y:LV[0],r:1.4,w:4,label:()=>save.eggs.includes('schacht')?'In den Lüftungsschacht schauen':'Lüftungsgitter abschrauben',fn:()=>{ gg.children.forEach((c,i)=>{ if(i<6) c.visible=false; });
+    dlg('Der Lüftungsschacht','Du kriechst ein paar Meter durch den staubigen Schacht. Am Ende steht eine Kiste mit der Aufschrift „Altbau – nicht wegwerfen!“. Darin:',[['📽️ ein Overheadprojektor'],['🖍️ eine Schachtel Kreide (halb leer)'],['💾 ein Stapel Disketten „Notenverwaltung 1998“'],['📼 eine VHS-Kassette „Sportfest 2004“'],['Zurückkriechen',closeDlg,'','OK']]); egg('schacht'); }}); }
+
+// ---- 4 UFO on the roof of hall 4 at night
+const UFO=new THREE.Group(); { const cx=(TRB.rx0+TRB.x0)/2, cz=(TRB.rz0+TRB.rz1)/2, y=TRB.h, mt=EM(0xb8c0c8), lt=new THREE.MeshBasicMaterial({color:0x7dffb0});
+  const disc=new THREE.Mesh(new THREE.CylinderGeometry(1.4,2.6,0.45,28),mt); disc.position.set(cx,y+3.2,cz); UFO.add(disc);
+  const dome=new THREE.Mesh(new THREE.SphereGeometry(1.05,20,12,0,Math.PI*2,0,Math.PI/2),new THREE.MeshLambertMaterial({color:0x86e6ff,transparent:true,opacity:.6})); dome.position.set(cx,y+3.4,cz); UFO.add(dome);
+  for(let k=0;k<10;k++){ const b=new THREE.Mesh(new THREE.SphereGeometry(0.1,8,6),lt); b.position.set(cx+Math.cos(k*0.628)*2.3,y+3.05,cz+Math.sin(k*0.628)*2.3); UFO.add(b); }
+  const beam=new THREE.Mesh(new THREE.ConeGeometry(2.2,3.0,24,1,true),new THREE.MeshBasicMaterial({color:0x7dffb0,transparent:true,opacity:.18,depthWrite:false,side:THREE.DoubleSide})); beam.position.set(cx,y+1.5,cz); UFO.add(beam);
+  const al=new THREE.Group(), gm=EM(0x6fcf5a), bk=new THREE.MeshBasicMaterial({color:0x111111}); eBox(al,gm,0.26,0.45,0.18,0,0.45,0); const hd=new THREE.Mesh(new THREE.SphereGeometry(0.22,12,10),gm); hd.scale.set(1,1.25,1); hd.position.y=0.92; al.add(hd);
+  eBox(al,bk,0.1,0.05,0.02,-0.08,0.96,0.2); eBox(al,bk,0.1,0.05,0.02,0.08,0.96,0.2); eBox(al,gm,0.08,0.3,0.08,-0.08,0.12,0); eBox(al,gm,0.08,0.3,0.08,0.08,0.12,0); al.position.set(cx+3.5,y,cz+1); al.rotation.y=-1.2; UFO.add(al);
+  const nr=textSprite('1947','rgba(0,0,0,0)','#c9e9b4',0.32); nr.position.set(TRB.rx0+0.1,y+0.75,cz); UFO.add(nr);
+  UFO.visible=false; UFO.userData={cx,cz,disc,beam}; scene.add(UFO); }
+
+// ---- 6 knocking door in the basement
+const DOOR={}; { const l=labFind(0,l=>l[0]==='Vorraum Turnhallen'); const sp=l&&spotNear(0,cw(l[1]),cw(l[2]),5);
+  if(sp){ let best=null; for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]) for(let s=0.25;s<7;s+=0.125){ const x=sp[0]+dx*s, z=sp[1]+dz*s; if(standY(x,z,LV[0])===null){ if(!best||s<best.s) best={s,dx,dz,x:sp[0]+dx*(s-0.25),z:sp[1]+dz*(s-0.25)}; break; } }
+    if(best){ const g=new THREE.Group(), wd=EM(0x6a4a2e); g.position.set(best.x+best.dx*0.33,LV[0],best.z+best.dz*0.33); g.rotation.y=Math.atan2(best.dx,best.dz);
+      eBox(g,wd,1.0,2.1,0.06,0,1.05,0); eBox(g,EM(0xc9a24a),0.08,0.08,0.06,0.38,1.0,-0.05); eBox(g,EM(0x2e3136),1.1,0.06,0.08,0,2.12,0); floorGroups[0].add(g);
+      const s=textSprite('U.00 – ???','rgba(255,255,255,.95)','#14202e',0.18); s.position.set(best.x,LV[0]+2.35,best.z); floorGroups[0].add(s);
+      Object.assign(DOOR,{x:best.x-best.dx*0.4,z:best.z-best.dz*0.4,k:[]});
+      EGGACT.push({f:0,x:DOOR.x,z:DOOR.z,y:LV[0],r:1.6,w:1,label:'An die Tür klopfen',fn:knock}); } } }
+function knock(tt){ const t=tt!==undefined?tt:performance.now()/1000; DOOR.k.push(t); if(DOOR.k.length>4) DOOR.k.shift(); tone([196],0,0.12,0.25); toast('*klopf*',600); const k=DOOR.k;
+  if(k.length===4){ const g1=k[1]-k[0], g2=k[2]-k[1], g3=k[3]-k[2]; if(g1<1.1&&g2<1.1&&g3>1.2&&g3<5){ DOOR.k=[]; let list=[]; try{ list=JSON.parse(localStorage.getItem('gp-eggboard')||'[]'); }catch(e){} if(!Array.isArray(list)) list=[]; if(save.name&&!list.includes(save.name)){ list.push(save.name); try{ localStorage.setItem('gp-eggboard',JSON.stringify(list.slice(-30))); }catch(e){} }
+      tone([392,523,659],0.12,0.4,0.15); dlg('Die Tür geht auf','Ein winziger Raum, eine Glühbirne, eine alte Tafel. Darauf mit Kreide: „Wer hier war:“',list.map(n=>['✏️ '+n]).concat([['Leise wieder rausgehen',closeDlg,'','OK']])); egg('klopf'); } } }
+
+// ---- 7/17 sprint record with bunny hops
+const BOOST={v:1,lastLand:-9,air:false,t0:null,prevX:0};
+// ---- 9 rubber duck that moves on after every find
+const DUCK=new THREE.Group(); { const y=EM(0xffd23f), o=EM(0xff8a1f); const b=new THREE.Mesh(new THREE.SphereGeometry(0.16,12,10),y); b.scale.set(1.2,0.8,1); b.position.y=0.13; DUCK.add(b);
+  const h=new THREE.Mesh(new THREE.SphereGeometry(0.09,10,8),y); h.position.set(0.13,0.3,0); DUCK.add(h); eBox(DUCK,o,0.08,0.03,0.06,0.24,0.29,0); eBox(DUCK,new THREE.MeshBasicMaterial({color:0x111111}),0.02,0.02,0.02,0.17,0.33,0.05); scene.add(DUCK); }
+const DUCKSPOTS=[]; WD.floors.forEach((f,fi)=>{ for(const l of f.labels){ if(l.closed||/^WC|Treppen|Reinig|Lager|EDV \/|Technik|Heizung|Lüftung/.test(l[0])) continue; DUCKSPOTS.push([fi,l]); } });
+function placeDuck(){ for(let t=0;t<40;t++){ const [fi,l]=pick(DUCKSPOTS), sp=spotNear(fi,cw(l[1]),cw(l[2]),4); if(!sp) continue; DUCK.position.set(sp[0],LV[fi],sp[1]); DUCK.rotation.y=Math.random()*6; DUCK.userData.f=fi; return; } }
+placeDuck(); EGGACT.push({get f(){ return DUCK.userData.f; },get x(){ return DUCK.position.x; },get z(){ return DUCK.position.z; },get y(){ return DUCK.position.y; },r:1.4,w:1,label:'Gummiente einsammeln',
+  fn:()=>{ save.ducks++; persist(); hud(); tone([1047,880],0.08,0.2,0.12); if(!egg('ente')) toast('🦆 Quietsch! Gummiente Nr. '+save.ducks+' gefunden – die nächste sitzt schon woanders.',2600); if(save.ducks===10){ DUCK.children[0].material=EM(0xf5c518,{emissive:0x553300}); toast('🦆✨ Zehn Enten! Ab jetzt ist sie golden.',3200); } placeDuck(); }});
+
+// ---- 11 DeLorean at the back of the car park
+{ let best=null; for(let x=95;x>=-2&&!best;x-=1) for(const z of [99.5,101,97.5,103]){ let ok=true; for(let dx=-2.5;dx<=2.5&&ok;dx+=0.5) for(let dz=-1.4;dz<=1.4&&ok;dz+=0.35) if(standY(x+dx,z+dz,LV[0])===null) ok=false; if(ok){ best=[x,z]; break; } }
+  if(best){ const [x,z]=best, c=new THREE.Group(), st=EM(0xc4c9cf), dk=EM(0x1c1f23), gl=new THREE.MeshLambertMaterial({color:0x223344,transparent:true,opacity:.7}), lt=new THREE.MeshBasicMaterial({color:0xffe9a8}), rd=new THREE.MeshBasicMaterial({color:0xff3b30});
+    eBox(c,st,4.2,0.55,1.8,0,0.55,0); const cab=eBox(c,gl,1.7,0.5,1.6,-0.2,1.08,0); eBox(c,st,1.2,0.06,1.62,-0.2,1.34,0);
+    for(const s of [-1,1]){ const d=eBox(c,st,1.4,0.05,0.9,-0.2,1.62,s*0.95); d.rotation.x=s*0.95; }
+    for(const [wx,wz] of [[-1.35,-0.9],[1.35,-0.9],[-1.35,0.9],[1.35,0.9]]){ const w=new THREE.Mesh(new THREE.CylinderGeometry(0.33,0.33,0.24,16),dk); w.rotation.x=Math.PI/2; w.position.set(wx,0.33,wz); c.add(w); }
+    eBox(c,lt,0.04,0.12,1.5,2.11,0.62,0); eBox(c,rd,0.04,0.12,1.5,-2.11,0.62,0); eBox(c,dk,0.6,0.25,0.9,-1.8,0.95,0);
+    for(const s of [-1,1]) eBox(c,new THREE.MeshBasicMaterial({color:0x8fe3ff}),3.6,0.02,0.02,0,0.35,s*0.93);
+    c.position.set(x,LV[0],z); floorGroups[0].add(c); mark(0,x-2.15,z-0.95,x+2.15,z+0.95);
+    const s=textSprite('Reserviert für den Direktor 2045','rgba(255,255,255,.96)','#14202e',0.22); s.position.set(x,LV[0]+2.6,z); floorGroups[0].add(s);
+    EGG.car=[x,z]; EGGACT.push({f:0,x:x,z:z+1.6,y:LV[0],r:3.2,label:'Das Auto ansehen',fn:()=>{ sayAs('Zettel unterm Scheibenwischer','„Flux-Kompensator bitte nicht berühren. Rückkehr am 21.10.2045.“'); egg('delorean'); }}); } }
+
+// ---- 14 school dog in the yard
+const DOG=new THREE.Group(); { const br=EM(0x8a5a2b), dk=EM(0x3a2615); eBox(DOG,br,0.7,0.3,0.28,0,0.45,0); eBox(DOG,br,0.28,0.26,0.24,0.42,0.65,0); eBox(DOG,dk,0.12,0.1,0.14,0.6,0.6,0); eBox(DOG,dk,0.06,0.14,0.06,0.38,0.85,0.09); eBox(DOG,dk,0.06,0.14,0.06,0.38,0.85,-0.09);
+  for(const [lx,lz] of [[-0.25,-0.1],[-0.25,0.1],[0.25,-0.1],[0.25,0.1]]) eBox(DOG,br,0.08,0.32,0.08,lx,0.16,lz); const tl=eBox(DOG,br,0.3,0.06,0.06,-0.45,0.62,0); tl.rotation.z=0.6; DOG.userData.tail=tl; scene.add(DOG);
+  const pts=[]; for(let t=0;t<200&&pts.length<6;t++){ const a=Math.random()*6.28, r=3+Math.random()*9, x=112+Math.cos(a)*r, z=94+Math.sin(a)*r*0.5; if(standY(x,z,0)!==null&&!isInside(G,x,z)) pts.push([x,z]); }
+  DOG.userData.pts=pts.length?pts:[[112,94]]; DOG.userData.i=0; DOG.position.set(DOG.userData.pts[0][0],0,DOG.userData.pts[0][1]);
+  EGGACT.push({f:G,get x(){ return DOG.position.x; },get z(){ return DOG.position.z; },y:0,r:1.8,label:'Bruno streicheln',fn:()=>{ DOG.userData.wait=4; tone([660,880],0.1,0.15,0.12); sayAs('Bruno','Wuff! *wedelt*'); egg('hund'); }}); }
+
+// ---- 15 four-leaf clover in the green classroom
+{ let p=null; for(let t=0;t<60&&!p;t++){ const a=Math.random()*6.28, r=Math.random()*3.5, x=SP.gk[0]+Math.cos(a)*r, z=SP.gk[1]+Math.sin(a)*r; if(standY(x,z,0)!==null) p=[x,z]; }
+  if(p){ const k=new THREE.Group(), gm=EM(0x2f9e44); for(let i=0;i<4;i++){ const l=new THREE.Mesh(new THREE.SphereGeometry(0.06,8,6),gm); l.scale.set(1,0.3,1); l.position.set(Math.cos(i*1.571)*0.06,0.08,Math.sin(i*1.571)*0.06); k.add(l); } eBox(k,gm,0.01,0.08,0.01,0,0.04,0); k.position.set(p[0],0.02,p[1]); scene.add(k);
+    EGGACT.push({f:G,x:p[0],z:p[1],y:0,r:1.2,w:1,label:'Kleeblatt pflücken',fn:()=>{ k.visible=false; sayAs('Du','Ein vierblättriges Kleeblatt! Das bringt Glück für die nächste Ex.'); egg('klee'); }}); } }
+
+// ---- 18/19 Schrödinger's cat (physics), Mr Bones (biology)
+{ const l=labFind(3,l=>l[0]==='Physik Sammlung'), sp=l&&spotNear(3,cw(l[1]),cw(l[2]),4);
+  if(sp){ const b=new THREE.Group(); eBox(b,EM(0x9b7b55),0.6,0.45,0.45,0,0.225,0); const s=textSprite('Vorsicht: Quantenzustand!','rgba(255,255,255,.95)','#14202e',0.15); s.position.set(0,0.75,0); b.add(s); b.position.set(sp[0],LV[3],sp[1]); floorGroups[3].add(b);
+    EGGACT.push({f:3,x:sp[0],z:sp[1],y:LV[3],r:1.6,label:'Die Kiste öffnen',fn:()=>{ sayAs('Die Kiste',Math.random()<0.5?'Miau! Die Katze lebt – und schaut dich vorwurfsvoll an.':'Die Katze schläft tief und fest. Oder? Du klappst die Kiste lieber schnell wieder zu.'); egg('katze'); }}); } }
+{ const l=labFind(2,l=>l[0]==='Biologie Sammlung'), sp=l&&spotNear(2,cw(l[1]),cw(l[2]),4);
+  if(sp){ const s=new THREE.Group(), bn=EM(0xf1ead9); eBox(s,bn,0.05,0.65,0.05,0,1.05,0); for(let k=0;k<5;k++) eBox(s,bn,0.36-k*0.03,0.03,0.18,0,1.32-k*0.08,0); const h=new THREE.Mesh(new THREE.SphereGeometry(0.13,10,8),bn); h.position.y=1.56; s.add(h);
+    eBox(s,new THREE.MeshBasicMaterial({color:0x111111}),0.04,0.04,0.02,-0.05,1.58,0.12); eBox(s,new THREE.MeshBasicMaterial({color:0x111111}),0.04,0.04,0.02,0.05,1.58,0.12); eBox(s,bn,0.26,0.06,0.14,0,0.72,0);
+    for(const x of [-0.1,0.1]) eBox(s,bn,0.04,0.7,0.04,x,0.35,0); for(const x of [-0.24,0.24]){ const a=eBox(s,bn,0.035,0.55,0.035,x,1.1,0); a.rotation.z=x>0?-0.2:0.2; } eBox(s,EM(0x6b7178),0.04,1.7,0.04,0,0.85,-0.12); eBox(s,EM(0x6b7178),0.4,0.03,0.4,0,0.015,-0.12);
+    s.position.set(sp[0],LV[2],sp[1]); floorGroups[2].add(s);
+    const J=['Ich hab keinen Bock auf Unterricht – mir fehlt einfach der Mumm in den Knochen.','Warum ich nie in die Pause gehe? Ich hab keinen Körper, der mich trägt.','Ich bin seit 1987 an dieser Schule. Ich war schon im Altbau Herr Knochen.','Lern deine 206 Knochen. Ich prüfe ab!','Mir ist so kalt – Fleisch wäre jetzt praktisch.'];
+    EGGACT.push({f:2,x:sp[0],z:sp[1],y:LV[2],r:1.6,label:'Herrn Knochen ansprechen',fn:()=>{ sayAs('Herr Knochen',pick(J)); egg('knochen'); }}); } }
+
+// ---- 13 washing hands in any toilet
+EGGACT.push({get f(){ return me.f; },get x(){ return me.x; },get z(){ return me.z; },get y(){ return me.y; },r:9,w:-5,when:()=>nearL(me.f,l=>/^WC/.test(l[0]),3.2)&&!RESTR[me.f][Math.floor(me.z/C)*GW+Math.floor(me.x/C)],label:'Hände waschen',
+  fn:()=>{ save.wash++; persist(); tone([1319,1568],0.05,0.12,0.08); toast('🧼 Hände gewaschen ('+save.wash+')',1300); if(save.wash>=10) egg('haende'); }});
+
+// ---- keys: clap in the staff room (wrong gong), echo in the car park, Konami code
+const KON=['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','KeyB','KeyA']; let konI=0, lastGong=-99;
+window.addEventListener('keydown',e=>{ if(!me.started) return; if(e.target&&/INPUT|TEXTAREA/.test(e.target.tagName)) return;
+  konI=e.code===KON[konI]?konI+1:(e.code===KON[0]?1:0); if(konI===KON.length){ konI=0; save.rainbow=save.rainbow?0:1; persist(); closeDlg(); if(!save.rainbow) myAvatar.userData.shirt.color.setHex(PALETTE[save.color%PALETTE.length]); if(!egg('konami')) toast(save.rainbow?'🌈 Regenbogen an':'Regenbogen aus',1500); }
+  if(e.code==='KeyG'&&!e.repeat){
+    if(me.f===0&&(/Tiefgarage/.test(whereText())||me.z>88)){ const w=['Hallo …','hallo …','allo …','llo …','o …']; w.forEach((t,i)=>setTimeout(()=>sayAs('Echo',t,900),i*650)); tone([523,523,523],0.65,0.5,0.06); egg('echo'); }
+    if(eggT-lastGong<5&&nearL(me.f,l=>l[0]==='Lehrer Kommunikation',7)) fehlgong(); } });
+function fehlgong(){ tone([392,370,349,330],0.35,1.0,0.2); toast('🔔 Fehlgong! Alle laufen los …',2600);
+  for(const n of NP){ if(!n.path||!n.c) continue; if(n.st===0){ n.st=1; n.pi=0; n.pose=0; n.mv=1; } else if(n.st===2){ n.st=3; n.pi=n.path.length/3-1; n.pose=0; n.mv=1; } }
+  lastGong=-99; egg('fehlgong'); }
+
+// ---- 10 absurd pupil line
+const ABSURD=['Ich hab gestern einen Hasen gesehen, der Mathe konnte. Bruchrechnen sogar.','Mein Goldfisch hat meine Hausaufgabe gegessen. Echt jetzt.','Wusstest du, dass die Kletterwand nachts heimlich wächst?','Im Keller wohnt ein Drache. Der Hausmeister füttert ihn mit Kreide.','Ich bin eigentlich ein Zeitreisender aus 2045. Psst.','Gestern hat mir die Schulglocke zugezwinkert.'];
+
+// ---- per frame
+let eggPrevBrk=null, idle=0, eggPrevJy=0;
+function eggTick(dt){ eggT+=dt; const T=schoolT(), h=hourNow();
+  // ghost class and UFO
+  GHOST.g.visible=h===0; if(GHOST.g.visible){ for(const c of GHOST.g.children) c.position.y=LV[2]+Math.sin(eggT*1.3+c.position.x)*0.05; if(me.f===2&&GHOST.cells&&GHOST.cells.has(Math.floor(me.z/C)*GW+Math.floor(me.x/C))) egg('geist'); }
+  UFO.visible=h>=22||h<5; if(UFO.visible){ const u=UFO.userData; u.disc.rotation.y+=dt*0.8; u.beam.material.opacity=0.12+Math.sin(eggT*3)*0.06; if(me.y>TRB.h-0.3&&Math.hypot(me.x-u.cx,me.z-u.cz)<9) egg('ufo'); }
+  // gong moments: wrong-gong window and punctuality
+  if(eggPrevBrk!==null&&T.brk!==eggPrevBrk){ lastGong=eggT; if(!T.brk&&myClass&&inRoom(myClass.r,myClass.f,0.2)){ save.punct++; persist(); if(save.punct<3) toast('⏰ Pünktlich im Klassenzimmer ('+save.punct+'/3)',2000); else egg('punkt'); } } eggPrevBrk=T.brk;
+  // bunny hops and the 100 m record
+  const run=(keys.ShiftLeft||keys.ShiftRight||runToggle)&&me.moving;
+  if(eggPrevJy===0&&me.jy>0){ if(run&&eggT-BOOST.lastLand<0.25) BOOST.v=Math.min(2.1,BOOST.v+0.22); else if(run) BOOST.v=Math.max(BOOST.v,1.08); if(BOOST.v>=2.0) egg('hop'); }
+  if(eggPrevJy>0&&me.jy===0) BOOST.lastLand=eggT; if(me.jy===0&&eggT-BOOST.lastLand>0.45) BOOST.v=1; if(!run) BOOST.v=Math.max(1,BOOST.v-dt*2); eggPrevJy=me.jy;
+  if(me.f===G&&me.z>-6.3&&me.z<0.7){ if(BOOST.prevX<118.6&&me.x>=118.6) BOOST.t0=eggT; if(BOOST.t0!==null&&BOOST.prevX<218&&me.x>=218){ const s=eggT-BOOST.t0; BOOST.t0=null; toast('⏱ 100 m in '+s.toFixed(2)+' s',2600); if(s<11){ sayAs('Sportlehrer','Das war jetzt aber nicht ganz sauber. Trotzdem: Respekt.'); egg('sprint'); } } } else BOOST.t0=null; BOOST.prevX=me.x;
+  // golden broom, rainbow
+  if(save.binTot>=50) egg('besen'); if(save.eggs.includes('besen')&&!myAvatar.userData.broom){ const b=new THREE.Group(); eBox(b,EM(0x8a5a2b),0.04,1.1,0.04,0,-0.3,0.12); eBox(b,EM(0xf5c518,{emissive:0x553300}),0.3,0.28,0.12,0,-0.9,0.12); myAvatar.userData.armR.add(b); myAvatar.userData.broom=b; }
+  if(save.rainbow) myAvatar.userData.shirt.color.setHSL((eggT*0.25)%1,0.8,0.55);
+  // stand still for a minute
+  if(!me.moving&&!modal()&&!me.cl&&me.started&&!Object.values(keys).some(Boolean)){ idle+=dt; if(idle>=60){ idle=-1e9; sayAs('Innere Stimme','Om … Du hörst die Lüftung atmen, irgendwo quietscht eine Tafel. Tiefe Ruhe.',6000); egg('zen'); } } else if(idle>0) idle=0;
+  // the dog
+  const D=DOG.userData; if(D.wait>0){ D.wait-=dt; D.tail.rotation.z=0.6+Math.sin(eggT*20)*0.5; } else { const p=D.pts[D.i], dx=p[0]-DOG.position.x, dz=p[1]-DOG.position.z, d=Math.hypot(dx,dz); if(d<0.3) D.i=(D.i+1)%D.pts.length; else { DOG.position.x+=dx/d*Math.min(d,dt*1.4); DOG.position.z+=dz/d*Math.min(d,dt*1.4); DOG.rotation.y=Math.atan2(-dz,dx); } D.tail.rotation.z=0.6+Math.sin(eggT*8)*0.3; }
+  DUCK.rotation.y+=dt*0.4; }
+
 // ================================================================ main loop
 let last=performance.now(), sendAcc=0, uiAcc=0, lastF=-1;
 function step(dt){
@@ -1587,7 +1754,7 @@ function step(dt){
   if(me.started){ const e0=save.energy; save.energy=(save.god||cur&&cur.rallye)?100:Math.max(0,Math.min(100,save.energy+dt*(run&&me.moving?-0.3:0.12))); if(e0>3&&save.energy<=3) toast('Du bist erschöpft. Iss etwas – B öffnet die Tasche.',3200); }
   if(me.cl) climbStep(dt,modal()?0:Math.max(-1,Math.min(1,f)),modal()?0:Math.max(-1,Math.min(1,s)));
   else if(me.moving){
-    const sp=(run?5.2:2.5)*Math.min(1,mag), sn=Math.sin(me.yaw), cs=Math.cos(me.yaw);
+    const sp=(run?5.2*BOOST.v:2.5)*Math.min(1,mag), sn=Math.sin(me.yaw), cs=Math.cos(me.yaw);
     const dx=(sn*f - cs*s)/mag, dz=(cs*f + sn*s)/mag; me.rot=Math.atan2(dx,dz); moveBy(dx,dz,sp*dt);
   }
   me.f=floorOf(me.y);
@@ -1597,7 +1764,7 @@ function step(dt){
   let dr=me.rot-myAvatar.rotation.y; dr=Math.atan2(Math.sin(dr),Math.cos(dr)); myAvatar.rotation.y+=dr*Math.min(1,dt*12);
   animate(myAvatar,me.moving,dt,me.wave>0,!!me.cl); bubble(myAvatar,me.wave>0);
   for(const st of stars){ if(!st.mesh.visible) continue; st.mesh.rotation.y+=dt*2; if(st.f===me.f&&Math.abs(me.y-LV[st.f])<0.4&&Math.hypot(st.x-me.x,st.z-me.z)<1.1){ st.mesh.visible=false; save.stars.push(st.id); save.score+=10; save.money+=50; persist(); toast('⭐ Stern gefunden! +10 ('+save.stars.length+'/'+stars.length+')',1500); refreshStats(); } }
-  missionTick(); syncPeers(dt); lifeTick(dt,performance.now());
+  missionTick(); syncPeers(dt); lifeTick(dt,performance.now()); eggTick(dt);
   const sn=Math.sin(me.yaw), cs=Math.cos(me.yaw), cp=Math.cos(me.pitch), spi=Math.sin(me.pitch);
   if(!me.third){
     camera.position.set(me.x,py+EYE,me.z); camera.lookAt(me.x+sn*cp,py+EYE-spi,me.z+cs*cp); myAvatar.visible=false;
@@ -1617,10 +1784,10 @@ function tick(now){ const dt=Math.min(0.1,(now-last)/1000); last=now; step(dt); 
 // ================================================================ start screen
 const colBox=$('colors'); PALETTE.forEach((c,i)=>{ const el=document.createElement('i'); el.style.background='#'+c.toString(16).padStart(6,'0'); if(i===save.color%PALETTE.length) el.className='on'; el.addEventListener('click',()=>{ save.color=i; [...colBox.children].forEach((x,k)=>x.className=k===i?'on':''); myAvatar.userData.shirt.color.setHex(c); }); colBox.append(el); });
 $('nick').value=save.name||'';
-function start(){ { const cv=$('code').value; if(cv&&cheat(cv)) return; } let n=$('nick').value.replace(/[^\p{L}\p{N} _.\-]/gu,'').trim().slice(0,14); if(!n) n='Gast'+Math.floor(100+Math.random()*900); save.name=n; persist(); $('nick').blur(); $('overlay').style.display='none'; me.started=true; try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} refreshStats(); drawMap(); hud(); ambient(); if(UMZUG) me.yaw=0; { const q=/[?#&]rallye=(\d+)([a-eA-E]?)/.exec(location.search+location.hash); if(q&&WORDS[+q[1]]){ const k=(q[1]+q[2]).toUpperCase(); setTimeout(()=>rallyeStart(UMZUG&&KLASSEN.includes(k)?k:+q[1]),300); } } toast(UMZUG?'Willkommen, '+n+'! Umzugs-Update: Der Flügel mit Aula und Oberstufe ist noch Baustelle. Vor dir liegt der Eingang am Treppenraum II. Sekretariat und Schulleitung findest du vorläufig in E.47 und E.48.':'Willkommen, '+n+'! Vor dir liegt der Haupteingang. E = ansprechen/handeln, Leertaste = springen, K = Karte.',6200); }
+function start(){ { const cv=$('code').value.replace(/[^A-Za-z0-9]/g,'').toUpperCase(); if(cv){ $('code').value=''; const ok=cheat(cv); if(ok&&cv==='NEUBAUKOMPLETT') return; if(!ok) toast('Unbekannter Code – das Spiel startet ohne.',2600); } } let n=$('nick').value.replace(/[^\p{L}\p{N} _.\-]/gu,'').trim().slice(0,14); if(!n) n='Gast'+Math.floor(100+Math.random()*900); save.name=n; persist(); $('nick').blur(); $('overlay').style.display='none'; me.started=true; try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} refreshStats(); drawMap(); hud(); ambient(); if(UMZUG) me.yaw=Math.PI/2; { const q=/[?#&]rallye=(\d+)([a-eA-E]?)/.exec(location.search+location.hash); if(q&&WORDS[+q[1]]){ const k=(q[1]+q[2]).toUpperCase(); setTimeout(()=>rallyeStart(UMZUG&&KLASSEN.includes(k)?k:+q[1]),300); } } toast(UMZUG?'Willkommen, '+n+'! Umzugs-Update: Der Flügel mit Aula und Oberstufe ist noch Baustelle. Geh geradeaus an den Fahrradständern entlang bis zum gelben Schild: Dort ist der Eingang am Treppenraum II. Sekretariat und Schulleitung findest du vorläufig in E.47 und E.48.':'Willkommen, '+n+'! Vor dir liegt der Haupteingang. E = ansprechen/handeln, Leertaste = springen, K = Karte.',6200); }
 $('go').addEventListener('click',start); $('nick').addEventListener('keydown',e=>{ if(e.key==='Enter') start(); });
 updateMissionUI(); refreshStats(); initNet(); requestAnimationFrame(tick); booted=true;
-window.__game={me,save,Net,stars,STAIRS,MISSIONS,LV,C,G,FN,canStand,standY,moveBy,startMission,peerAv,floorOf,WD,grid,inside,isInside,camera,NP,LIFE,STAFF,classes,HM,LIT,BINS,KW,SP,RAMP,SEATS,COUNTERS,buy,eat,bag,library,secretary,lesson,doAct,findAct,dropLitter,jump,climbStart,schoolT,cheat,dispOf,SCI,PLATES,TIB,KLASSEN,myC:()=>myClass,talkTo:n=>talkTo(n),roomCells,LOCKSKIP,WCLOG,FIXT,BALC,PART,RESTR,LOCKS,WCN:()=>WCN,teach:()=>TEACH_ON,rallyeStart,rallyePlan,rallyeHelp,rallyeMenu,cur:()=>cur,GATES,TRB,UMZUG,inZone,setT:v=>{ const d=LUNCH+LES+v; tOff=d-((Date.now()/1000)%DAY); },setLunch:v=>{ tOff=(v||5)-((Date.now()/1000)%DAY); },nodes:()=>NN,act:()=>act,closeDlg,step,keys};
+window.__game={me,save,Net,stars,STAIRS,MISSIONS,LV,C,G,FN,canStand,standY,moveBy,startMission,peerAv,floorOf,WD,grid,inside,isInside,camera,NP,LIFE,STAFF,classes,HM,LIT,BINS,KW,SP,RAMP,SEATS,COUNTERS,buy,eat,bag,library,secretary,lesson,doAct,findAct,dropLitter,jump,climbStart,schoolT,cheat,dispOf,SCI,PLATES,TIB,KLASSEN,myC:()=>myClass,EGG,egg,eggs:()=>save.eggs,BOOST,DOOR,knock,fehlgong,GHOST,UFO,DOG,DUCK,talkTo:n=>talkTo(n),roomCells,LOCKSKIP,WCLOG,FIXT,BALC,PART,RESTR,LOCKS,WCN:()=>WCN,teach:()=>TEACH_ON,rallyeStart,rallyePlan,rallyeHelp,rallyeMenu,cur:()=>cur,GATES,TRB,UMZUG,inZone,setT:v=>{ const d=LUNCH+LES+v; tOff=d-((Date.now()/1000)%DAY); },setLunch:v=>{ tOff=(v||5)-((Date.now()/1000)%DAY); },nodes:()=>NN,act:()=>act,closeDlg,step,keys};
 })();
 </script>
 </body>
