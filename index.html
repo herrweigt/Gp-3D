@@ -1623,7 +1623,7 @@ const GHOST={g:new THREE.Group(),cells:null}; { const l=WD.floors[2].labels.find
     eBox(r,gr,0.7,0.8,0.5,0,0.9,0); eBox(r,gr,0.5,0.4,0.4,0,1.55,0); eBox(r,ey,0.1,0.06,0.02,-0.1,1.6,0.21); eBox(r,ey,0.1,0.06,0.02,0.1,1.6,0.21); eBox(r,dk,0.04,0.3,0.04,0,1.9,0); eBox(r,EM(0xd0442f),0.1,0.1,0.1,0,2.07,0);
     eBox(r,gr,0.14,0.6,0.14,-0.45,0.9,0.05).rotation.z=0.5; eBox(r,dk,0.2,0.5,0.2,-0.18,0.25,0); eBox(r,dk,0.2,0.5,0.2,0.18,0.25,0); eBox(r,EM(0xe9b824),0.5,0.28,0.02,0,0.95,0.26);
     r.position.set(sp[0],0,sp[1]); r.rotation.y=Math.random()*6; floorGroups[G].add(r);
-    const s=textSprite('Projekt Vertretungsplan 2.0','rgba(233,184,36,.95)','#14202e',0.2); s.position.set(sp[0],2.45,sp[1]); floorGroups[G].add(s);
+    const s=textSprite('Projekt Vertretungsplan 2.0','rgba(233,184,36,.97)','#14202e',0.15); s.position.set(sp[0],2.2,sp[1]); s.renderOrder=5; s.material.depthTest=false; floorGroups[G].add(s);
     EGGACT.push({f:G,x:sp[0],z:sp[1],y:0,r:2.4,label:'Roboter ansehen',fn:()=>{ sayAs('Roboter','Beep. Vertretungsplan wird berechnet … 3 % … Fehler: Zu viele Lehrkräfte krank. Beep.'); egg('werkstatt'); }}); } }
 
 // ---- 3 vent grille next to the climbing wall
@@ -1648,7 +1648,7 @@ const DOOR={}; { const l=labFind(0,l=>l[0]==='Vorraum Turnhallen'); const sp=l&&
   if(sp){ let best=null; for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]) for(let s=0.25;s<7;s+=0.125){ const x=sp[0]+dx*s, z=sp[1]+dz*s; if(standY(x,z,LV[0])===null){ if(!best||s<best.s) best={s,dx,dz,x:sp[0]+dx*(s-0.25),z:sp[1]+dz*(s-0.25)}; break; } }
     if(best){ const g=new THREE.Group(), wd=EM(0x6a4a2e); g.position.set(best.x+best.dx*0.33,LV[0],best.z+best.dz*0.33); g.rotation.y=Math.atan2(best.dx,best.dz);
       eBox(g,wd,1.0,2.1,0.06,0,1.05,0); eBox(g,EM(0xc9a24a),0.08,0.08,0.06,0.38,1.0,-0.05); eBox(g,EM(0x2e3136),1.1,0.06,0.08,0,2.12,0); floorGroups[0].add(g);
-      const s=textSprite('U.00 – ???','rgba(255,255,255,.95)','#14202e',0.18); s.position.set(best.x,LV[0]+2.35,best.z); floorGroups[0].add(s);
+      const s=textSprite('U.00 – ???','rgba(255,255,255,.95)','#14202e',0.16); s.position.set(best.x+best.dx*0.2,LV[0]+2.3,best.z+best.dz*0.2); floorGroups[0].add(s);
       Object.assign(DOOR,{x:best.x-best.dx*0.4,z:best.z-best.dz*0.4,k:[]});
       EGGACT.push({f:0,x:DOOR.x,z:DOOR.z,y:LV[0],r:1.6,w:1,label:'An die Tür klopfen',fn:knock}); } } }
 function knock(tt){ const t=tt!==undefined?tt:performance.now()/1000; DOOR.k.push(t); if(DOOR.k.length>4) DOOR.k.shift(); tone([196],0,0.12,0.25); toast('*klopf*',600); const k=DOOR.k;
