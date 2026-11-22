@@ -81,3 +81,10 @@ Bitte die Klasse anweisen, Fantasienamen zu verwenden. Vor dem Einsatz mit Schü
 - Durchsagen: alle 1–2,5 Minuten ein gelbes Banner oben mit Gong (Hinweise, Witze, Fundsachen-Tipps).
 - Fundbüro: 8 Fundsachen liegen in Räumen. Mit Namen und Klasse → ins Klassenzimmer dieser Klasse bringen, ohne Namen → Sekretariat. Je 15 Punkte, alle zusammen +50.
 - Aufsicht-Sterne: Rennen im Gebäude in der Nähe einer Lehrkraft, des Hausmeisters oder der Schulleitung und Müll fallen lassen geben einen Stern. Sterne verfallen nach 45 s Wohlverhalten, beim Müllwegwerfen oder für eine zurückgebrachte Fundsache. Bei drei Sternen: Durchsage mit dem Spitznamen, Rennen gesperrt, bis man sich im Sekretariat meldet. Draußen darf gerannt werden. Lehrkraft- und Gottmodus sind ausgenommen.
+
+## Gedächtnis und Alltagsszenen (22.11.2026)
+
+- Gedächtnis (pro Gerät gespeichert): Hausmeister, Sekretariat, Küche, Schulleitung und Lehrkräfte erinnern sich, z. B. an aufgehobenen Müll, zurückgebrachte Fundsachen, Meldungen im Sekretariat, Vordrängeln oder einen gefundenen Schlüssel, und sprechen dich darauf an.
+- Alltagsszenen alle 30–60 s in deiner Nähe: jemandem fällt die Brotzeit herunter (der Müll bleibt liegen), Arbeitsblätter fliegen herum, zwei Schüler unterhalten sich, Lehrkräfte und Hausmeister murmeln vor sich hin.
+- Schlüsselsuche: Eine Lehrkraft vermisst ihren Schlüssel; er liegt in der Nähe. Zurückbringen: +10.
+- Schlange an der Essensausgabe (Mittagspause): Wer sich vordrängelt, wird ermahnt und bekommt einen Aufsicht-Stern. Wer sich hinten anstellt, ist nach kurzer Zeit dran.

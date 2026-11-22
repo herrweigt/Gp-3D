@@ -1244,7 +1244,7 @@ const L={
   sl:['Willkommen am Gymnasium Putzbrunn!','Schön, dass du dich vorstellst. Viel Erfolg im neuen Haus!','Bei Fragen hilft dir das Sekretariat gleich nebenan.','Wir freuen uns, dass der Umzug geklappt hat.','Pass gut auf das neue Gebäude auf – es gehört uns allen.'],
   office:['Grüß dich! Komm gern in meine Sprechstunde.','Kann ich dir helfen? Das Sekretariat weiß fast alles.','Einen Moment, ich bin gleich für dich da.','Bei Fragen zur Schullaufbahn bist du hier richtig.'],
 };
-function talkTo(n){ const T=schoolT(), recent=n.said||(n.said=[]), H=hintFor(n), S=STAFF;
+function talkTo(n){ if(memTalk(n)) return; const T=schoolT(), recent=n.said||(n.said=[]), H=hintFor(n), S=STAFF;
   const choose=(...pools)=>{ const all=[].concat(...pools.filter(Boolean)); let c=all.filter(x=>!recent.includes(x)); if(!c.length){ recent.length=0; c=all; } const x=pick(c); recent.push(x); if(recent.length>8) recent.shift(); return x; };
   const loc=whereText(), inSport=/Turnhalle|Sport|Kletter|Beach|Platz/.test(loc), inMensa=/Schülercafé|Küchen|Mensa/.test(loc);
   if(n===S.hm) return say(n,H&&Math.random()<0.4?H:choose(L.hm));
@@ -1484,7 +1484,7 @@ function findAct(){ if(!me.started||modal()) return null; const T=schoolT(); let
   for(const l of LIT){ const d=near(l.x,l.z,l.y,1.6); if(d<1e8) put(d,'Müll aufheben',()=>{ const mine=l.mine; rmLitter(l); save.trash++; me.picked=(me.picked||0)+1; if(!mine){ save.score+=1; refreshStats(); } persist(); hud(); toast(mine?'Aufgehoben. Ab damit in den Eimer!':'Aufgehoben. +1 – ab damit in den Eimer!',1500); },1); }
   if(save.trash) for(const b of BINS){ const d=near(b[1],b[2],LV[b[0]],1.7); if(d<1e8) put(d,'Müll wegwerfen ('+save.trash+')',()=>{ const n=save.trash; save.trash=0; save.score+=2*n; me.binned=(me.binned||0)+n; save.binTot=(save.binTot||0)+n; persist(); hud(); refreshStats(); toast('Sauber! '+n+' × Müll entsorgt: +'+2*n,1800); wantDown('gute Tat'); tone([523,659],0.08,0.2,0.1); },0.5); }
   const S=STAFF, st=(n,r,label,fn)=>{ if(n){ const d=near(n.x,n.z,n.y,r); if(d<1e8) put(d,label,fn,0.6); } };
-  st(S.kiosk,3.4,'Am Pausenverkauf einkaufen',()=>shop(KIOSK,'Pausenverkauf')); if(S.koch&&!S.koch.hide) st(S.koch,3.4,'An der Küchen-Ausgabe bestellen',()=>shop(['tag','salat','wasser','schorle'],'Küchen-Ausgabe (Mensa)','Mahlzeit! Heute gibt es Käsespätzle.'));
+  st(S.kiosk,3.4,'Am Pausenverkauf einkaufen',()=>shop(KIOSK,'Pausenverkauf')); if(S.koch&&!S.koch.hide) st(S.koch,3.4,'An der Küchen-Ausgabe bestellen',()=>queueCut()||shop(['tag','salat','wasser','schorle'],'Küchen-Ausgabe (Mensa)','Mahlzeit! Heute gibt es Käsespätzle.'));
   else if(S.koch){ const d=near(S.koch.home.x,S.koch.home.z,S.koch.home.y,3.4); if(d<1e8){ const m=Math.ceil(toLunch()/60); put(d,'Küchen-Ausgabe: geschlossen',()=>dlg('Küchen-Ausgabe (Mensa)','Die Küchen-Ausgabe hat nur in der Mittagspause nach der 6. Stunde geöffnet – die nächste beginnt in etwa '+m+' Minute'+(m===1?'':'n')+'.',[]),0.6); } }
   st(S.bib,3,'Bücher ausleihen oder zurückgeben',library); st(S.sek,3.4,'Im Sekretariat nachfragen',secretary); st(S.sek2,3.4,'Im Sekretariat nachfragen',secretary);
   st(S.sl,3.2,'Mit der Schulleitung sprechen',()=>talkTo(S.sl));
@@ -1859,7 +1859,7 @@ function fundTake(it){ if(FUND.carry.length>=3){ toast('Deine Hände sind voll �
   if(it.owner) dlg(it.ic+' '+it.n,'Innen steht ein Name: „'+it.owner.who+', '+it.owner.c.cn.toUpperCase()+'“. Bring '+pron(it)+' ins Klassenzimmer der '+it.owner.c.cn.toUpperCase()+'. Welcher Raum das ist? Schau auf die Karte (K) oder nutze das Navi (N).',[]);
   else dlg(it.ic+' '+it.n,'Kein Name zu finden. Fundsachen ohne Namen gehören ins Fundbüro im Sekretariat.',[]);
   fundHud(); }
-function fundGive(list,where){ for(const it of list){ FUND.carry.splice(FUND.carry.indexOf(it),1); FUND.done++; } save.score+=15*list.length; wantDown('gute Tat'); persist(); refreshStats(); tone([659,784,1047],0.09,0.3,0.12);
+function fundGive(list,where){ for(const it of list){ FUND.carry.splice(FUND.carry.indexOf(it),1); FUND.done++; } save.score+=15*list.length; MEM.fund+=list.length; memSave(); wantDown('gute Tat'); persist(); refreshStats(); tone([659,784,1047],0.09,0.3,0.12);
   let t=list.length===1?list[0].ic+' '+list[0].n+' '+where+' abgegeben. +15':list.length+' Fundsachen '+where+' abgegeben. +'+15*list.length;
   if(FUND.done>=FUND.total){ save.score+=50; persist(); refreshStats(); t+=' · Alle Fundsachen zurück: Fundbüro-Profi! +50'; } toast(t,3400); fundHud(); }
 const DEL={f:0,x:0,z:0,y:0,r:3,w:1.4,when:()=>!!fundHere(),label:()=>{ const it=fundHere(); return 'Fundsache hinlegen: '+it.n+' ('+it.owner.who+')'; },fn:()=>{ const it=fundHere(); if(it) fundGive([it],'im Klassenzimmer der '+it.owner.c.cn.toUpperCase()); }};
@@ -1880,7 +1880,7 @@ function wantAdd(why,n){ if(immune()||!me.started) return; if(WANT.s>=3){ WANT.c
   if(WANT.s>=3){ WANT.call=true; setTimeout(()=>durchsage((save.name||'Gast')+' wird gebeten, sich umgehend im Sekretariat zu melden. Bis dahin: Gehen statt Rennen!'),1800); } wantHud(true); }
 function wantDown(why){ if(WANT.s<=0) return; WANT.s--; WANT.calm=0; if(!WANT.s) WANT.call=false; toast((WANT.s?'⭐'.repeat(WANT.s):'Sterne weg')+' · '+(why==='gute Tat'?'Gute Tat – die Aufsicht ist zufrieden.':'Die Aufsicht hat dich aus den Augen verloren.'),2200); wantHud(); }
 function wantReport(){ const S=['„Na, wieder gerannt? Setz dich kurz hin und atme durch. … So, und jetzt bitte im Schritttempo weiter.“','„Ich habe deinen Namen schon dreimal durchgesagt. Wir gehen ab jetzt, ja?“','„Die Aufsicht hat angerufen. Sie meinte, du wärst schneller als der Gong.“','„Weißt du, wie viele Füße in diesem Gang unterwegs sind? Eben. Langsam, bitte.“'];
-  WANT.s=0; WANT.call=false; WANT.calm=0; wantHud(); dlg('Sekretariat',pickA(S)+' – Alles erledigt, die Sterne sind weg.',[]); tone([523,659,784],0.08,0.2,0.1); }
+  MEM.reports++; memSave(); WANT.s=0; WANT.call=false; WANT.calm=0; wantHud(); dlg('Sekretariat',pickA(S)+' – Alles erledigt, die Sterne sind weg.',[]); tone([523,659,784],0.08,0.2,0.1); }
 function wantHud(flash){ const e=$('want'); if(!WANT.s){ e.style.display='none'; return; } e.style.display='block'; e.textContent='⭐'.repeat(WANT.s)+'☆'.repeat(3-WANT.s)+' Aufsicht'+(WANT.s>=3?' · ins Sekretariat!':''); if(flash){ e.classList.remove('fl'); void e.offsetWidth; e.classList.add('fl'); } }
 function runBlocked(){ return PLUS_OK&&WANT.s>=3&&!immune(); }
 function wantTick(dt,running){ if(immune()){ if(WANT.s){ WANT.s=0; WANT.call=false; wantHud(); } return; }
@@ -1892,13 +1892,93 @@ let runWarn=0;
 // ---------------------------------------------------------------- per frame
 function plusTick(dt){ if(!PLUS_OK) return; DEL.f=me.f; DEL.x=me.x; DEL.z=me.z; DEL.y=me.y; const running=(keys.ShiftLeft||keys.ShiftRight||runToggle)&&me.moving&&!modal();
   if(running&&runBlocked()&&performance.now()-runWarn>5000){ runWarn=performance.now(); toast('⭐⭐⭐ Rennen ist gesperrt, bis du dich im Sekretariat meldest.',2200); }
-  naviTick(dt); dsTick(dt); wantTick(dt,running&&!runBlocked()); }
+  naviTick(dt); dsTick(dt); wantTick(dt,running&&!runBlocked()); p2Tick(dt); }
 function plusMenu(box){ if(!PLUS_OK) return; const row=(t,d,b,fn)=>{ const r=document.createElement('div'); r.className='m'; const l=document.createElement('div'), x=document.createElement('b'), s=document.createElement('small'); x.textContent=t; s.textContent=d; l.append(x,s); const bt=document.createElement('button'); bt.textContent=b; bt.addEventListener('click',fn); r.append(l,bt); box.append(r); };
   row('🧭 Navi','Raum oder Klasse wählen – leuchtende Pfeile am Boden führen dich hin (Taste N). In der Rallye ist es aus.','Öffnen',()=>{ closeMenu(); naviOpen(); });
   row('📦 Fundbüro ('+FUND.done+'/'+FUND.total+')','Im Gebäude liegen Fundsachen. Mit Namen: ins Klassenzimmer der Klasse bringen. Ohne Namen: ins Sekretariat. Achte auf die Durchsagen!','Infos',()=>dlg('📦 Fundbüro','Überall im Schulhaus liegen vergessene Sachen: Turnbeutel, Trinkflaschen, ein einzelner Sportschuh … Heb sie mit E auf. Steht ein Name mit Klasse darin, bring sie in das Klassenzimmer dieser Klasse. Ohne Namen gehören sie ins Fundbüro im Sekretariat. Du kannst drei Sachen gleichzeitig tragen. Jede Fundsache bringt 15 Punkte, alle zusammen einen Bonus. Tipp: Die Durchsagen verraten manchmal, wo etwas liegt.',[]));
   row('⭐ Aufsicht-Sterne','Wer im Schulhaus rennt, während eine Lehrkraft zusieht, bekommt Sterne. Bei drei Sternen wirst du ausgerufen und musst ins Sekretariat. Draußen darfst du rennen.','Infos',()=>dlg('⭐ Aufsicht-Sterne','Im Gebäude wird gegangen. Rennst du in der Nähe einer Lehrkraft, des Hausmeisters oder der Schulleitung, gibt es einen Stern. Müll fallen lassen kostet ebenfalls einen. Sterne verschwinden wieder, wenn du dich eine Weile benimmst, Müll in einen Eimer wirfst oder eine Fundsache zurückbringst. Bei drei Sternen kommt eine Durchsage mit deinem Namen, Rennen ist gesperrt, bis du dich im Sekretariat meldest. Draußen auf dem Pausenhof und den Sportplätzen darfst du rennen.',[])); }
 fundSpawn(); PLUS_OK=true;
 PLUS.NAV=NAV; PLUS.NAVLIST=NAVLIST; PLUS.FUND=FUND; PLUS.WANT=WANT; PLUS.DS=DS; PLUS.naviSet=naviSet; PLUS.naviOff=naviOff; PLUS.wantAdd=wantAdd; PLUS.durchsage=durchsage; PLUS.dsText=dsText; PLUS.fundHere=fundHere; PLUS.wantReport=wantReport;
+
+// ================================================================ update „Gedächtnis & Alltagsszenen“ (NPCs remember you; small scenes in the building)
+var P2_OK=false;
+// ---------------------------------------------------------------- 5) Gedächtnis: staff remember what you did (stored per device)
+const MEM=(()=>{ let m={}; try{ m=JSON.parse(localStorage.getItem('gp-mem')||'{}'); }catch(e){} return Object.assign({fund:0,reports:0,keys:0,keyT:[],kiosk:0,cut:0,sek:0},m); })();
+function memSave(){ try{ localStorage.setItem('gp-mem',JSON.stringify(MEM)); }catch(e){} }
+const nm=()=>save.name||'du';
+function memLine(n){ const S=STAFF, b=save.binTot||0, said=n.memSaid||(n.memSaid=[]), L=[];
+  if(n===S.hm){ if(b>=5) L.push('Servus, '+nm()+'! Du bist doch die Person, die hier dauernd Müll aufhebt. '+b+' Teile schon – Respekt!');
+    if(b>=20) L.push('Mit dir bräuchte ich glatt keinen Besen mehr. Fast.');
+    if(MEM.reports>=1) L.push('Na, '+nm()+' – heute schon gerannt? Ich hab dich im Blick …');
+    if(MEM.cut>=1) L.push('In der Mensa wird sich hinten angestellt. Hab ich gehört, gell.'); }
+  else if(n===S.sek||n===S.sek2){ if(MEM.fund>=1) L.push('Ah, '+nm()+'! Danke nochmal für die Fundsachen – '+MEM.fund+' Stück hast du schon zurückgebracht.');
+    if(MEM.reports>=2) L.push('Du schon wieder? Langsam kenn ich dich besser als unseren Kopierer.');
+    else if(MEM.reports===1) L.push('Diesmal kommst du freiwillig? Schön!');
+    if(MEM.sek>=3&&!L.length) L.push('Hallo '+nm()+', du bist ja Stammgast hier im Sekretariat.'); }
+  else if(n===S.koch||n===S.kiosk){ if(MEM.kiosk>=3) L.push('Ah, '+nm()+'! Wie immer?'); if(MEM.cut>=1) L.push('Heute stellst du dich aber hinten an, gell?'); }
+  else if(n===S.sl){ if(MEM.reports>=2) L.push('Ich habe deinen Namen jetzt schon öfter in den Durchsagen gehört als meinen eigenen.'); if(MEM.fund>=4) L.push('Das Sekretariat schwärmt von dir – unsere Fundbüro-Rettung!'); }
+  else if(n.kind==='t'&&MEM.keyT.indexOf(n.i)>=0) L.push(pick(['Mein Schlüssel-Retter! Danke nochmal.','Seit du meinen Schlüssel gefunden hast, häng ich ihn mir um den Hals. Versprochen.','Ah, '+nm()+'! Ohne dich stünde ich heute noch vor dem Lehrerzimmer.']));
+  const c=L.filter(x=>said.indexOf(x)<0); if(!c.length) return null; const x=pick(c); said.push(x); return x; }
+function memTalk(n){ if(!P2_OK) return false; if(n===STAFF.sek||n===STAFF.sek2){ MEM.sek++; memSave(); } const x=memLine(n); if(x&&Math.random()<0.7){ say(n,x); return true; } return false; }
+const GREET={t:0};
+function greetTick(dt){ GREET.t-=dt; if(GREET.t>0) return; GREET.t=2; const h=STAFF.hm; if(!h||h.hide||(save.binTot||0)<5) return; if(Math.abs(h.y-me.y)<1.5&&Math.hypot(h.x-me.x,h.z-me.z)<3.5&&!(h.greetAt>performance.now())){ h.greetAt=performance.now()+150000; say(h,pick(['Servus, '+nm()+'!','Grüß dich, '+nm()+' – sauber heute!','Ah, mein bester Müll-Helfer!'])); } }
+
+// ---------------------------------------------------------------- 6a) Schlange an der Essensausgabe in der Mittagspause
+const qK=()=>STAFF.koch;
+const Q={on:false,mem:[],served:0,next:0,ok:0,warned:false,stand:0};
+function qSlot(i){ const k=qK(), fx=Math.sin(k.rot), fz=Math.cos(k.rot); return {x:k.x+fx*(2.7+0.8*i),z:k.z+fz*(2.7+0.8*i),rot:k.rot+Math.PI}; }
+function qStart(){ const k=qK(); if(!k||k.hide) return; const n0=[]; for(let i=0;i<6;i++){ const s=qSlot(i); if(standY(s.x,s.z,k.y)===null) break; n0.push(s); } if(n0.length<3) return;
+  const cand=NP.filter(n=>n.kind==='p'&&!n.hide&&n.st===0&&n.brk&&Math.abs(n.y-k.y)<0.6&&Math.hypot(n.x-k.x,n.z-k.z)<38).sort((a,b)=>Math.hypot(a.x-k.x,a.z-k.z)-Math.hypot(b.x-k.x,b.z-k.z)).slice(0,n0.length);
+  if(cand.length<3) return; Q.on=true; Q.mem=cand; Q.served=0; Q.next=9; Q.ok=0; Q.warned=false; Q.stand=0; cand.forEach((n,i)=>{ n.q={i,back:false}; n.pose=0; }); }
+function qMove(n,tx,tz,rot,dt){ const dx=tx-n.x, dz=tz-n.z, d=Math.hypot(dx,dz); if(d<0.05){ if(n.mv){ n.mv=0; n.rot=rot; n.dirty=1; } return true; } const s=Math.min(d,1.35*dt); n.x+=dx/d*s; n.z+=dz/d*s; n.rot=Math.atan2(dx,dz); n.mv=1; n.dirty=1; return false; }
+function qRelease(n){ n.q.back=true; }
+function qTick(dt){ const T=schoolT(), k=qK();
+  if(!Q.on){ Q.retry=(Q.retry||0)-dt; if(T.lunch&&T.t>6&&T.left>90&&k&&!k.hide&&!Q.tried&&Q.retry<=0){ Q.retry=4; qStart(); if(Q.on) Q.tried=true; } if(!T.lunch) Q.tried=false; return; }
+  const end=!T.brk||T.left<45;
+  for(const n of Q.mem.slice()){ if(!n.q) continue; if(n.st!==0){ setPlace(n,n.brk); n.q=null; continue; }
+    if(end&&!n.q.back) qRelease(n);
+    if(n.q.back){ if(qMove(n,n.brk.x,n.brk.z,n.brk.rot,dt)){ setPlace(n,n.brk); n.q=null; } continue; }
+    const s=qSlot(n.q.i); qMove(n,s.x,s.z,s.rot,dt); }
+  Q.mem=Q.mem.filter(n=>n.q); if(!Q.mem.length){ Q.on=false; return; }
+  if(end) return;
+  Q.next-=dt; const line=Q.mem.filter(n=>!n.q.back).sort((a,b)=>a.q.i-b.q.i);
+  const s0=line.length?qSlot(0):null; if(Q.next<=0&&line.length&&Math.hypot(line[0].x-s0.x,line[0].z-s0.z)<0.4){ Q.next=9+Math.random()*4; const f=line[0]; if(Math.random()<0.5) say(f,pick(['Einmal Nudeln, bitte!','Gibt’s heute Nachtisch?','Bitte ohne Soße!','Darf ich die doppelte Portion? Ich wachse noch.'])); setTimeout(()=>{ if(k&&!k.hide&&Math.random()<0.6) say(k,pick(['Guten Appetit!','Mit Soße?','Der Nächste, bitte!','Salat gibt’s da drüben.'])); },1800); qRelease(f); line.slice(1).forEach(n=>n.q.i--); Q.served++;
+    const last=line[line.length-1]; if(line.length>2&&Math.random()<0.3) setTimeout(()=>say(last,pick(['Wie lang dauert das denn heute?','Riecht nach Spaghetti!','Ich hab so Hunger.'])),4000); }
+  // player: wait at the end of the line, then it is your turn
+  const tail=qSlot(line.length); if(Math.abs(me.y-k.y)<0.6&&Math.hypot(me.x-tail.x,me.z-tail.z)<1.6){ Q.stand+=dt; if(Q.stand>5&&!(Q.ok>performance.now())){ Q.ok=performance.now()+25000; toast('Du bist dran! Jetzt kannst du an der Essensausgabe bestellen.',2600); } } else Q.stand=Math.max(0,Q.stand-dt); }
+// returns true if buying is blocked right now (someone queues and you did not wait)
+function queueCut(){ if(!P2_OK||!Q.on) return false; const line=Q.mem.filter(n=>n.q&&!n.q.back); if(line.length<2||Q.ok>performance.now()) { MEM.kiosk++; memSave(); return false; }
+  const n=line[0]; say(n,pick(['Hey! Nicht vordrängeln!','Hinten anstellen, wie alle anderen!','Ähm, hallo? Wir stehen hier schon ewig!']));
+  if(!Q.warned){ Q.warned=true; MEM.cut++; memSave(); if(typeof wantAdd==='function') wantAdd('Vordrängeln in der Mensa'); }
+  toast('Stell dich hinten an die Schlange – wenn du kurz wartest, bist du dran.',2800); return true; }
+
+// ---------------------------------------------------------------- 6b) Alltagsszenen rund um dich
+const SC={next:25,key:null};
+function nearNPC(test,rmin,rmax){ const c=NP.filter(n=>!n.hide&&!n.q&&test(n)&&Math.abs(n.y-me.y)<1.2); const d=n=>Math.hypot(n.x-me.x,n.z-me.z); const ok=c.filter(n=>d(n)>=rmin&&d(n)<=rmax); return ok.length?pick(ok):null; }
+const SCENES=[
+  {w:3,go(){ const n=nearNPC(n=>n.kind==='p'&&n.pose!==1,3,16); if(!n) return false; say(n,pick(['Neiiin, meine Brezn!','Oh nein – mein Pausenbrot!','Mist, alles auf dem Boden!'])); addLitter(n.x+0.4,n.y,n.z+0.2,false);
+    const m=nearNPC(o=>o!==n&&o.kind==='p'&&Math.hypot(o.x-n.x,o.z-n.z)<7,0,30); if(m) setTimeout(()=>say(m,pick(['Fünf-Sekunden-Regel!','Die isst du jetzt aber nicht mehr, oder?','Ich hab’s gesehen! 😂','Heb’s lieber auf, bevor der Hausmeister kommt.'])),2600); return true; }},
+  {w:2,go(){ const n=nearNPC(n=>n.kind==='p'&&n.pose!==1,3,14); if(!n) return false; say(n,pick(['Mist, meine Arbeitsblätter!','Aaah, der Wind! Meine Zettel!','Wer hat mich angerempelt? Jetzt liegt alles rum!'])); for(let i=0;i<3;i++) addLitter(n.x+(Math.random()-0.5)*1.6,n.y,n.z+(Math.random()-0.5)*1.6,false); return true; }},
+  {w:2,go(){ if(SC.key) return false; return keyStart(); }},
+  {w:2,go(){ const a=nearNPC(n=>n.kind==='p'&&n.st===0,3,14); if(!a) return false; const b=NP.find(o=>o!==a&&o.kind==='p'&&!o.hide&&Math.hypot(o.x-a.x,o.z-a.z)<4); if(!b) return false;
+    const P=pick([['Wetten, ich bin schneller im Klassenzimmer als du?','Aber nicht rennen – sonst gibt’s Sterne!'],['Weißt du schon, wo Physik ist?','Keine Ahnung. Ich drück einfach N.'],['Hast du die Durchsage gehört?','Die mit dem Pausenbrot? Das lebt jetzt angeblich.'],['Im Keller soll eine Tür sein, hinter der wer klopft …','Hör auf, ich geh da nie wieder runter!'],['Hast du schon alle Fundsachen gefunden?','Nur den linken Schuh. Wer verliert bitte nur einen Schuh?']]);
+    say(a,P[0]); setTimeout(()=>say(b,P[1]),2800); return true; }},
+  {w:1,go(){ const n=nearNPC(n=>n.kind==='t',3,14); if(!n) return false; say(n,pick(['Wo ist denn mein Kaffee … ach, auf dem Kopierer.','Hat jemand einen Board-Marker, der noch schreibt?','So viele neue Räume. Ich hab mich heute auch schon verlaufen.','Bitte langsam auf der Treppe!'])); return true; }},
+  {w:1,go(){ const h=STAFF.hm; if(!h||h.hide||Math.abs(h.y-me.y)>1.2||Math.hypot(h.x-me.x,h.z-me.z)>18) return false; say(h,pick(['So, die Tür klemmt nicht mehr.','Wer hat schon wieder den Feuerlöscher als Garderobe benutzt?','Neubau – und trotzdem tropft’s irgendwo. Typisch.','Wenn ich den erwisch, der den Kaugummi unter den Tisch geklebt hat …'])); return true; }} ];
+function sceneTick(dt){ SC.next-=dt; if(SC.next>0||modal()||!me.started) return; SC.next=30+Math.random()*30; const tot=SCENES.reduce((s,x)=>s+x.w,0);
+  for(let t=0;t<4;t++){ let r=Math.random()*tot, s=SCENES[0]; for(const x of SCENES){ r-=x.w; if(r<=0){ s=x; break; } } if(s.go()) return; } SC.next=8; }
+// lost key: a teacher looks for it, the key lies somewhere nearby on the same floor
+const keyMesh=new THREE.Mesh(new THREE.TorusGeometry(0.06,0.018,6,12),lam({color:0xe8c233})); keyMesh.rotation.x=Math.PI/2; keyMesh.visible=false; scene.add(keyMesh);
+function keyStart(){ const n=nearNPC(n=>n.kind==='t'&&!n.vest,2,14); if(!n||LIFE.stage<2) return false; const a=nodeNear(n.x,n.z,n.y,6); if(a<0) return false;
+  for(let t=0;t<30;t++){ const ang=Math.random()*6.283, d=7+Math.random()*14, x=n.x+Math.sin(ang)*d, z=n.z+Math.cos(ang)*d; if(standY(x,z,n.y)===null||inZone(floorOf(n.y),x,z)) continue; const b=nodeNear(x,z,n.y,2); if(b<0||!bfs(a,b)) continue;
+    SC.key={n,x,z,y:n.y,f:floorOf(n.y),got:false,t:240}; keyMesh.position.set(x,n.y+0.03,z); keyMesh.visible=true; say(n,pick(['Hat jemand meinen Schlüsselbund gesehen? Ohne den komm ich nicht ins Lehrerzimmer!','Mein Schlüssel ist weg! Der muss hier irgendwo sein …','Hilfe – wer findet meinen Schlüssel? Gelber Anhänger!'])); return true; }
+  return false; }
+EGGACT.push({get f(){ return SC.key?SC.key.f:-1; },get x(){ return SC.key?SC.key.x:0; },get z(){ return SC.key?SC.key.z:0; },get y(){ return SC.key?SC.key.y:0; },r:1.6,w:1.2,when:()=>SC.key&&!SC.key.got,label:'Schlüsselbund aufheben',fn:()=>{ SC.key.got=true; keyMesh.visible=false; toast('🔑 Ein Schlüsselbund mit gelbem Anhänger. Wem gehört der wohl? (Die Lehrkraft, die ihn sucht, ist nicht weit.)',3200); tone([880,1175],0.06,0.15,0.1); }});
+EGGACT.push({get f(){ return SC.key?floorOf(SC.key.n.y):-1; },get x(){ return SC.key?SC.key.n.x:0; },get z(){ return SC.key?SC.key.n.z:0; },get y(){ return SC.key?SC.key.n.y:0; },r:2.6,w:2,when:()=>SC.key&&SC.key.got,label:()=>'Schlüssel zurückgeben ('+nameOf(SC.key.n)+')',fn:()=>{ const k=SC.key; SC.key=null; say(k.n,pick(['Mein Schlüssel! Du bist ein Schatz, danke!','Danke! Du hast mir den Tag gerettet.','Na endlich – danke dir, '+nm()+'!'])); if(MEM.keyT.indexOf(k.n.i)<0){ MEM.keyT.push(k.n.i); if(MEM.keyT.length>30) MEM.keyT.shift(); } MEM.keys++; memSave(); save.score+=10; persist(); refreshStats(); if(typeof wantDown==='function') wantDown('gute Tat'); toast('🔑 Schlüssel zurückgegeben: +10',2200); }});
+function keyTick(dt){ const k=SC.key; if(!k) return; k.t-=dt; keyMesh.rotation.z+=dt*0.8; if(k.t<=0||k.n.hide){ if(!k.got&&!k.n.hide) say(k.n,'Ach, hier ist er ja – in meiner Jackentasche. Peinlich.'); keyMesh.visible=false; SC.key=null; } }
+function p2Tick(dt){ if(!P2_OK) return; greetTick(dt); qTick(dt); sceneTick(dt); keyTick(dt); }
+P2_OK=true;
+PLUS.MEM=MEM; PLUS.Q=Q; PLUS.SC=SC; PLUS.SCENES=SCENES; PLUS.memLine=memLine; PLUS.qStart=qStart; PLUS.keyStart=keyStart; PLUS.queueCut=queueCut;
 
 // ================================================================ main loop
 let last=performance.now(), sendAcc=0, uiAcc=0, lastF=-1;
