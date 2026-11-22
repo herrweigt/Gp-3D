@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: gp-3d
+    runtime: node
+    region: frankfurt
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /healthz

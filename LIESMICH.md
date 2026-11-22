@@ -4,12 +4,17 @@ Inhalt:
 - `index.html` – das komplette Spiel in einer Datei (3D-Engine und Gebäudedaten sind eingebettet, es wird nichts von fremden Servern nachgeladen).
 - `server.js` + `package.json` – kleiner Mehrspieler-Server (Node.js ab Version 18).
 
-## Mehrspieler online (für Schülerinnen und Schüler ohne Claude-Konto)
-Das Spiel braucht dafür einen Dienst, der Node.js ausführt und WebSockets erlaubt:
-1. Diesen Ordner in ein (privates) GitHub-Repository laden.
-2. Bei einem Node-Hoster (z. B. Render, Railway, Fly.io oder ein Schul-/Sachaufwandsträger-Server) einen "Web Service" aus dem Repository anlegen.
-   Build-Befehl: `npm install` – Start-Befehl: `npm start`. Der Port kommt automatisch aus der Variable `PORT`.
-3. Die Adresse des Dienstes an die Klasse geben. Alle, die sie öffnen, sind in derselben Welt.
+## Mehrspieler mit GitHub Pages
+GitHub Pages liefert nur Dateien aus und kann keinen Spielserver betreiben. Die Seite bleibt bei GitHub; für den Mehrspieler kommt ein kleiner Server dazu.
+
+1. Bei https://render.com mit dem GitHub-Konto anmelden (kostenloser Tarif).
+2. „New +“ → „Blueprint“ → Repository `Gp-3D` wählen. Die Datei `render.yaml` legt alles fest (Node, Region Frankfurt, `npm install`, `npm start`).
+3. Nach dem ersten Start zeigt Render eine Adresse wie `https://gp-3d.onrender.com`.
+4. Diese Adresse in `index.html` eintragen: nach `const GP_SERVER=''` suchen und daraus `const GP_SERVER='wss://gp-3d.onrender.com/ws'` machen (https → wss, `/ws` anhängen). Speichern, hochladen.
+5. Fertig: Alle, die die GitHub-Pages-Adresse öffnen, sind in derselben Welt. Zum Testen ohne Änderung geht auch `…/Gp-3D/?server=wss://gp-3d.onrender.com/ws`.
+
+Gut zu wissen: Der kostenlose Render-Server schläft nach 15 Minuten ohne Besucher ein. Der Erste wartet dann bis zu einer Minute („Spielserver wird geweckt …“), das Spiel läuft in der Zeit solo weiter.
+Alternativ kann der Server auch direkt die Seite ausliefern: Dann einfach die Render-Adresse weitergeben, ohne Schritt 4.
 
 Lokal testen: `npm install && npm start`, dann http://localhost:3000 in zwei Browserfenstern öffnen.
 
@@ -69,3 +74,10 @@ Bitte die Klasse anweisen, Fantasienamen zu verwenden. Vor dem Einsatz mit Schü
 - Tafeln: weiß, über die ganze Breite der fenster- und türlosen Wand; Tische und Lehrkraft richten sich danach aus.
 - Umzugs-Update: Start auf dem Platz westlich der Fahrradständer, 35 m vor dem Eingang Treppenraum II (gelbes Schild).
 - Codes auf der Startseite (LEHRKRAFT, GOTTMODUS) starten das Spiel jetzt direkt mit.
+
+## Navi, Durchsagen, Fundbüro, Aufsicht-Sterne (22.11.2026)
+
+- Navi (Taste N oder Karte K): Raum oder Klasse suchen bzw. in der Karte auf einen Raum tippen. Leuchtende Pfeile am Boden und eine türkise Linie auf der Karte führen hin, auch über Treppen. In der Rallye ist das Navi aus.
+- Durchsagen: alle 1–2,5 Minuten ein gelbes Banner oben mit Gong (Hinweise, Witze, Fundsachen-Tipps).
+- Fundbüro: 8 Fundsachen liegen in Räumen. Mit Namen und Klasse → ins Klassenzimmer dieser Klasse bringen, ohne Namen → Sekretariat. Je 15 Punkte, alle zusammen +50.
+- Aufsicht-Sterne: Rennen im Gebäude in der Nähe einer Lehrkraft, des Hausmeisters oder der Schulleitung und Müll fallen lassen geben einen Stern. Sterne verfallen nach 45 s Wohlverhalten, beim Müllwegwerfen oder für eine zurückgebrachte Fundsache. Bei drei Sternen: Durchsage mit dem Spitznamen, Rennen gesperrt, bis man sich im Sekretariat meldet. Draußen darf gerannt werden. Lehrkraft- und Gottmodus sind ausgenommen.
