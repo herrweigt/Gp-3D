@@ -26,6 +26,7 @@ const server = http.createServer((req, res) => {
 const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 1024 });
 const players = new Map();   // id -> {ws, state, n, t}
 let nextId = 1;
+const TEAMF = { k:[0,999999], lf:[0,1], lc:[0,99], tq:[0,999999], tp:[0,999999], md:[0,1], qm:[0,40], qs:[0,255], px:[-500,500], pz:[-500,500], pf:[0,9], ps:[0,255], tk:[0,9999], tr:[0,2], ts:[0,255], td:[0,255], sw:[0,2] };
 const num = (v, lo, hi) => (typeof v === 'number' && isFinite(v) ? Math.max(lo, Math.min(hi, v)) : null);
 
 wss.on('connection', ws => {
@@ -43,6 +44,8 @@ wss.on('connection', ws => {
     if (x === null || z === null || f === null || r === null) return;
     p.state = { n: String(d.n || 'Gast').slice(0, 14), c: num(d.c, 0, 31) || 0, x, z, y: num(d.y, -5, 60) || 0, f: Math.round(f), r,
                 s: num(d.s, 0, 99999) || 0, m: d.m === 2 ? 2 : d.m ? 1 : 0, w: d.w ? 1 : 0, j: num(d.j, 0, 12) || 0 };
+    // Team-Felder: ausschließlich Zahlen (kein freier Text, kein Chat)
+    for (const k in TEAMF) { const v = num(d[k], TEAMF[k][0], TEAMF[k][1]); p.state[k] = v === null ? 0 : (k === 'px' || k === 'pz' ? Math.round(v * 10) / 10 : Math.round(v)); }
   });
   const bye = () => players.delete(id);
   ws.on('close', bye); ws.on('error', bye);

@@ -88,3 +88,11 @@ Bitte die Klasse anweisen, Fantasienamen zu verwenden. Vor dem Einsatz mit Schü
 - Alltagsszenen alle 30–60 s in deiner Nähe: jemandem fällt die Brotzeit herunter (der Müll bleibt liegen), Arbeitsblätter fliegen herum, zwei Schüler unterhalten sich, Lehrkräfte und Hausmeister murmeln vor sich hin.
 - Schlüsselsuche: Eine Lehrkraft vermisst ihren Schlüssel; er liegt in der Nähe. Zurückbringen: +10.
 - Schlange an der Essensausgabe (Mittagspause): Wer sich vordrängelt, wird ermahnt und bekommt einen Aufsicht-Stern. Wer sich hinten anstellt, ist nach kurzer Zeit dran.
+
+## Team und Partneraufgaben (23.11.2026)
+
+- Team bilden: neben einen anderen Spieler stellen und E drücken (der andere bestätigt) – oder Menü → „Team“ → „Partner suchen“ (zuerst aus derselben Rallye-Klasse). Nach 60 s ohne Treffer springt der Ersatzpartner „Max“ ein.
+- Verständigung ohne Chat: Funk mit 16 vorgegebenen Nachrichten (Taste T oder 💬, Zahlen 1–9) und Markierungen (Taste Q oder 📍). Es gibt bewusst keinen freien Text. Der Server leitet nur Zahlen weiter (Nachrichten-Nummer, Koordinaten, Aufgaben-Code).
+- Lotsen-Mission: Einer sieht das Ziel (orange auf der Karte), der andere läuft „blind“ ohne Karte und Navi und wird per Funk und Markierungen hingeführt. +30. Max kann Lotse sein.
+- Doppelschloss: Zwei grüne Schalterplatten in zwei Stockwerken, jeder bekommt nur einen Rätselhinweis zu seinem Schalter. Nur gleichzeitig darauf stehen öffnet das Schloss. +40.
+- Wichtig: Die Team-Funktionen brauchen die neue server.js (bei Render automatisch nach dem Push).

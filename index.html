@@ -56,6 +56,14 @@
   #bigmap .bar.nav select{max-width:300px;padding:6px;border-radius:8px}
   #bigmap .bar.nav small{color:var(--mut)}
   #bm{cursor:crosshair}
+  #teamInfo,#tping{display:none;font-size:12px;font-weight:700;color:#7cfc8a;margin-bottom:3px}
+  #tping{color:#ff9f1c}
+  #tbtns{display:none;gap:6px;margin:4px 0}
+  #tbtns button{padding:5px 8px;font-size:12px}
+  #tmsg{position:fixed;left:50%;top:64px;transform:translateX(-50%);background:rgba(255,210,63,.96);color:#14202e;border-radius:12px;padding:7px 14px;font-weight:800;font-size:16px;display:none;z-index:7;pointer-events:none}
+  #tmsg.in{animation:dsin .3s ease-out}
+  #quick{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);display:none;grid-template-columns:repeat(3,minmax(120px,1fr));gap:6px;background:rgba(20,32,46,.92);padding:10px;border-radius:14px;z-index:8;max-width:94vw}
+  #quick button{padding:8px;font-size:14px}
   #purse{margin-top:4px;font-size:13px}
   .card{background:#132033;border:1px solid var(--line);border-radius:16px;padding:20px;max-width:560px;width:100%;max-height:92vh;overflow:auto;-webkit-user-select:text;user-select:text;touch-action:pan-y}
   .card h1{margin:0 0 4px;font-size:24px}
@@ -92,6 +100,9 @@
 
 <div id="players" class="panel">
   <div id="want"></div>
+  <div id="teamInfo"></div>
+  <div id="tping"></div>
+  <div id="tbtns"><button id="tbQuick">💬 Funk (T)</button><button id="tbPing" class="sec">📍 Markieren (Q)</button></div>
   <div id="clock">…</div>
   <h3>Spieler</h3>
   <div id="plist"></div>
@@ -105,6 +116,8 @@
 <div id="where">Schulgelände</div>
 <div id="toast"></div>
 <div id="ds"></div>
+<div id="tmsg"></div>
+<div id="quick"></div>
 <div id="act"></div>
 <div id="talk"><b id="talkN"></b><span id="talkT"></span></div>
 
@@ -134,6 +147,7 @@
     <b>B</b><span>Tasche: essen, Bücher, Müll</span>
     <b>Treppen</b><span>einfach hinauf- oder hinunterlaufen</span>
     <b>K</b><span>Übersichtskarte mit Raumnamen</span>
+    <b>T / Q</b><span>Im Team: Funk (vorgegebene Nachrichten) / Markierung setzen</span>
     <b>N</b><span>Navi: Raum oder Klasse wählen, Pfeile am Boden führen hin</span>
     <b>M</b><span>Missionen</span>
     <b>V</b><span>Ich-Perspektive / Verfolgerkamera</span>
@@ -1002,9 +1016,9 @@ const fin=v=>typeof v==='number'&&isFinite(v);
 function cleanState(s){ if(!s||typeof s!=='object') return null; if(!fin(s.x)||!fin(s.z)||!fin(s.r)) return null;
   let n=typeof s.n==='string'?s.n.replace(/[^\p{L}\p{N} _.\-]/gu,'').slice(0,14):''; if(!n) n='Gast';
   const y=fin(s.y)?Math.max(LV[0],Math.min(LV[NF-1]+0.5,s.y)):0;
-  return {n,c:fin(s.c)?Math.abs(Math.round(s.c))%PALETTE.length:0,x:Math.max(BOUND.x0,Math.min(BOUND.x1,s.x)),z:Math.max(BOUND.z0,Math.min(BOUND.z1,s.z)),y,f:floorOf(y),r:s.r,s:fin(s.s)?Math.max(0,Math.min(99999,Math.round(s.s))):0,m:s.m===2?2:s.m?1:0,w:s.w?1:0,j:fin(s.j)?Math.max(0,Math.min(12,s.j)):0}; }
+  return {n,c:fin(s.c)?Math.abs(Math.round(s.c))%PALETTE.length:0,x:Math.max(BOUND.x0,Math.min(BOUND.x1,s.x)),z:Math.max(BOUND.z0,Math.min(BOUND.z1,s.z)),y,f:floorOf(y),r:s.r,s:fin(s.s)?Math.max(0,Math.min(99999,Math.round(s.s))):0,m:s.m===2?2:s.m?1:0,w:s.w?1:0,j:fin(s.j)?Math.max(0,Math.min(12,s.j)):0,T:teamClean(s)}; }
 function setPeers(list){ Net.peers.clear(); for(const [id,st] of list){ const c=cleanState(st); if(c&&Net.peers.size<40) Net.peers.set(String(id),c); } }
-function myState(){ return {n:save.name||'Gast',c:save.color,x:Math.round(me.x*100)/100,z:Math.round(me.z*100)/100,y:Math.round(me.y*100)/100,f:me.f,r:Math.round(me.rot*100)/100,s:save.score,m:me.cl?2:me.moving?1:0,w:me.wave>0?1:0,j:Math.round(me.jy*100)/100}; }
+function myState(){ return Object.assign({n:save.name||'Gast',c:save.color,x:Math.round(me.x*100)/100,z:Math.round(me.z*100)/100,y:Math.round(me.y*100)/100,f:me.f,r:Math.round(me.rot*100)/100,s:save.score,m:me.cl?2:me.moving?1:0,w:me.wave>0?1:0,j:Math.round(me.jy*100)/100},teamState()); }
 function setNet(mode,label){ Net.mode=mode; Net.label=label; $('net').textContent=label; }
 // Mehrspieler auf GitHub Pages: Adresse des eigenen Spielservers (server.js, z. B. bei Render) hier eintragen, z. B. 'wss://gp-3d.onrender.com/ws'
 const GP_SERVER='wss://gp-3d-7dsj.onrender.com/ws';
@@ -1113,7 +1127,7 @@ const mctx=$('map').getContext('2d');
 function drawMarkers(g,P,f,scale){
   for(const s of stars){ if(s.f!==f||!s.mesh.visible) continue; const p=P(s.x,s.z); g.fillStyle='#e0a800'; g.fillRect(p[0]-2*scale,p[1]-2*scale,4*scale,4*scale); }
   for(const s of Net.peers.values()){ if(s.f!==f) continue; const p=P(s.x,s.z); g.fillStyle='#'+PALETTE[s.c].toString(16).padStart(6,'0'); g.beginPath(); g.arc(p[0],p[1],4*scale,0,7); g.fill(); g.strokeStyle='#fff'; g.lineWidth=1; g.stroke(); }
-  navDraw(g,P,f,scale);
+  navDraw(g,P,f,scale); teamDraw(g,P,f,scale);
 }
 function drawZone(g,P,f,fs){ if(!UMZUG||f<G) return; const a=P(1.5,ZL), b=P(zoneX(f),106), c=P(46.4,66.0); g.fillStyle='rgba(235,140,40,.42)'; g.fillRect(a[0],a[1],b[0]-a[0],b[1]-a[1]); g.fillRect(a[0],c[1],c[0]-a[0],a[1]-c[1]); if(fs){ g.fillStyle='#14202e'; g.font='700 '+Math.round(fs*1.5)+'px system-ui,sans-serif'; g.textAlign='center'; g.fillText('🚧 Baustelle – gesperrt',(a[0]+b[0])/2,(a[1]+b[1])/2); } }
 function drawSite(g,P){ for(const r of SITE){ const a=P(r[0],r[1]), b=P(r[2],r[3]); g.fillStyle=r[4]; g.fillRect(a[0],a[1],b[0]-a[0],b[1]-a[1]); } }
@@ -1146,7 +1160,7 @@ function drawBig(){
   if(bmFloor===me.f){ const p=P(me.x,me.z); g.save(); g.translate(p[0],p[1]); g.rotate(-me.yaw); g.fillStyle='#d6336c'; g.strokeStyle='#fff'; g.lineWidth=1.5*dpr; g.beginPath(); g.moveTo(0,11*dpr); g.lineTo(7*dpr,-8*dpr); g.lineTo(-7*dpr,-8*dpr); g.closePath(); g.fill(); g.stroke(); g.restore(); }
   document.querySelectorAll('#bigmap [data-f]').forEach(b=>b.classList.toggle('on',+b.dataset.f===bmFloor));
 }
-function openMap(){ if(!me.started) return; closeMenu(); bmFloor=me.f; $('bigmap').style.display='flex'; unlock(); drawBig(); }
+function openMap(){ if(!me.started) return; if(blindNo()) return; closeMenu(); bmFloor=me.f; $('bigmap').style.display='flex'; unlock(); drawBig(); }
 function closeMap(){ $('bigmap').style.display='none'; }
 $('btnMap').addEventListener('click',openMap); $('mapwrap').addEventListener('click',openMap); $('bmClose').addEventListener('click',closeMap);
 function whereText(){ let best=null,bd=9; for(const l of WD.floors[me.f].labels){ const d=Math.hypot(cw(l[1])-me.x,cw(l[2])-me.z); if(d<bd){ bd=d; best=dispOf(l); } } const onStair=Math.abs(me.y-LV[me.f])>0.25;
@@ -1783,7 +1797,7 @@ const navMesh=new THREE.InstancedMesh(navGeo,navMat,60); navMesh.count=0; navMes
 const navPin=new THREE.Mesh(new THREE.CylinderGeometry(0.7,0.7,3.2,20,1,true),new THREE.MeshBasicMaterial({color:0x3ee6ff,transparent:true,opacity:.3,side:THREE.DoubleSide,depthWrite:false})); navPin.visible=false; scene.add(navPin);
 const _o=new THREE.Object3D();
 function naviBlocked(){ const R=cur&&cur.rallye; return R&&!R.show; }
-function naviSet(e){ if(!e) return; if(naviBlocked()){ toast('Während der Rallye ist das Navi aus – du sollst die Räume selbst finden. (Der Hilfe-Knopf zeigt dir das Ziel.)',4200); return; }
+function naviSet(e){ if(!e) return; if(TEAM_OK&&blindNo()) return; if(naviBlocked()){ toast('Während der Rallye ist das Navi aus – du sollst die Räume selbst finden. (Der Hilfe-Knopf zeigt dir das Ziel.)',4200); return; }
   if(LIFE.stage<2){ toast('Das Navi lädt noch – gleich noch einmal versuchen.',2200); return; }
   let b=nodeNear(e.x,e.z,LV[e.f],10); if(b<0) b=nodeNear(e.x,e.z,LV[e.f],18); if(b<0){ toast('Dorthin kommst du gerade nicht (Baustelle oder gesperrt).',3000); return; }
   NAV.on=true; NAV.e=e; NAV.node=b; NAV.pts=null; NAV.re=0; if(!naviRoute()){ NAV.on=false; toast('Dorthin kommst du gerade nicht (Baustelle oder gesperrt).',3000); return; }
@@ -1894,8 +1908,9 @@ let runWarn=0;
 // ---------------------------------------------------------------- per frame
 function plusTick(dt){ if(!PLUS_OK) return; DEL.f=me.f; DEL.x=me.x; DEL.z=me.z; DEL.y=me.y; const running=(keys.ShiftLeft||keys.ShiftRight||runToggle)&&me.moving&&!modal();
   if(running&&runBlocked()&&performance.now()-runWarn>5000){ runWarn=performance.now(); toast('⭐⭐⭐ Rennen ist gesperrt, bis du dich im Sekretariat meldest.',2200); }
-  naviTick(dt); dsTick(dt); wantTick(dt,running&&!runBlocked()); p2Tick(dt); }
+  naviTick(dt); dsTick(dt); wantTick(dt,running&&!runBlocked()); p2Tick(dt); if(TEAM_OK) teamTick(dt); }
 function plusMenu(box){ if(!PLUS_OK) return; const row=(t,d,b,fn)=>{ const r=document.createElement('div'); r.className='m'; const l=document.createElement('div'), x=document.createElement('b'), s=document.createElement('small'); x.textContent=t; s.textContent=d; l.append(x,s); const bt=document.createElement('button'); bt.textContent=b; bt.addEventListener('click',fn); r.append(l,bt); box.append(r); };
+  row('👥 Team & Partneraufgaben',hasTeam()?'Team mit '+pName()+' – Lotsen-Mission und Doppelschloss.':'Mit einem anderen Spieler (oder dem Ersatzpartner Max) gemeinsam Aufgaben lösen. Nur vorgegebene Nachrichten, kein Chat.','Öffnen',()=>{ closeMenu(); teamMenu(); });
   row('🧭 Navi','Raum oder Klasse wählen – leuchtende Pfeile am Boden führen dich hin (Taste N). In der Rallye ist es aus.','Öffnen',()=>{ closeMenu(); naviOpen(); });
   row('📦 Fundbüro ('+FUND.done+'/'+FUND.total+')','Im Gebäude liegen Fundsachen. Mit Namen: ins Klassenzimmer der Klasse bringen. Ohne Namen: ins Sekretariat. Achte auf die Durchsagen!','Infos',()=>dlg('📦 Fundbüro','Überall im Schulhaus liegen vergessene Sachen: Turnbeutel, Trinkflaschen, ein einzelner Sportschuh … Heb sie mit E auf. Steht ein Name mit Klasse darin, bring sie in das Klassenzimmer dieser Klasse. Ohne Namen gehören sie ins Fundbüro im Sekretariat. Du kannst drei Sachen gleichzeitig tragen. Jede Fundsache bringt 15 Punkte, alle zusammen einen Bonus. Tipp: Die Durchsagen verraten manchmal, wo etwas liegt.',[]));
   row('⭐ Aufsicht-Sterne','Wer im Schulhaus rennt, während eine Lehrkraft zusieht, bekommt Sterne. Bei drei Sternen wirst du ausgerufen und musst ins Sekretariat. Draußen darfst du rennen.','Infos',()=>dlg('⭐ Aufsicht-Sterne','Im Gebäude wird gegangen. Rennst du in der Nähe einer Lehrkraft, des Hausmeisters oder der Schulleitung, gibt es einen Stern. Müll fallen lassen kostet ebenfalls einen. Sterne verschwinden wieder, wenn du dich eine Weile benimmst, Müll in einen Eimer wirfst oder eine Fundsache zurückbringst. Bei drei Sternen kommt eine Durchsage mit deinem Namen, Rennen ist gesperrt, bis du dich im Sekretariat meldest. Draußen auf dem Pausenhof und den Sportplätzen darfst du rennen.',[])); }
@@ -1981,6 +1996,138 @@ function keyTick(dt){ const k=SC.key; if(!k) return; k.t-=dt; keyMesh.rotation.z
 function p2Tick(dt){ if(!P2_OK) return; greetTick(dt); qTick(dt); sceneTick(dt); keyTick(dt); }
 P2_OK=true;
 PLUS.MEM=MEM; PLUS.Q=Q; PLUS.SC=SC; PLUS.SCENES=SCENES; PLUS.memLine=memLine; PLUS.qStart=qStart; PLUS.keyStart=keyStart; PLUS.queueCut=queueCut;
+
+// ================================================================ update „Team“: Partner, Schnellnachrichten, Markierungen, Partneraufgaben
+// Kein freier Text: übertragen werden nur Zahlen (Nachrichten-Nummer, Koordinaten, Aufgaben-Code).
+var TEAM_OK=false;
+const QMSG=['','📍 Hier!','🙋 Komm zu mir!','⬅️ Links','➡️ Rechts','⬆️ Geradeaus','🔼 Treppe hoch','🔽 Treppe runter','✋ Stopp!','↩️ Falsch – zurück!','👍 Ja','👎 Nein','⏳ Warte kurz','🟢 Ich steh am Schalter!','🎉 Geschafft!','🙏 Danke!','🤷 Ich find’s nicht'];
+const TEAM={k:1+Math.floor(Math.random()*999998),lf:0,lc:0,tq:0,tp:0,qm:0,qs:0,px:0,pz:0,pf:0,ps:0,tk:0,tr:0,ts:0,td:0,sw:0,
+  pk:0,pn:'',bot:null,since:0,gone:0,lfT:0,ign:{},asked:{},seen:{qs:-1,ps:-1,ts:-1,td:-1},task:null,pings:[]};
+function teamState(){ if(!TEAM_OK) return {}; const T=TEAM; return {k:T.k,lf:T.lf,lc:T.lc,tq:T.tq,tp:T.tp,md:UMZUG?1:0,qm:T.qm,qs:T.qs,px:Math.round(T.px*10)/10,pz:Math.round(T.pz*10)/10,pf:T.pf,ps:T.ps,tk:T.tk,tr:T.tr,ts:T.ts,td:T.td,sw:T.sw}; }
+function teamClean(s){ const o={}, R={k:[0,999999],lf:[0,1],lc:[0,99],tq:[0,999999],tp:[0,999999],md:[0,1],qm:[0,40],qs:[0,255],px:[-500,500],pz:[-500,500],pf:[0,9],ps:[0,255],tk:[0,9999],tr:[0,2],ts:[0,255],td:[0,255],sw:[0,2]};
+  for(const k in R){ const v=s[k]; o[k]=(typeof v==='number'&&isFinite(v))?Math.max(R[k][0],Math.min(R[k][1],(k==='px'||k==='pz')?v:Math.round(v))):0; } return o; }
+const peerT=()=>{ const L=[]; for(const [id,s] of Net.peers) if(s.T&&s.T.k) L.push([id,s]); return L; };
+function partner(){ if(TEAM.bot) return null; if(!TEAM.pk) return null; for(const [id,s] of Net.peers) if(s.T&&s.T.k===TEAM.pk) return [id,s]; return null; }
+function pName(){ return TEAM.bot?TEAM.bot.name:(TEAM.pn||'Partner'); }
+function hasTeam(){ return !!(TEAM.bot||TEAM.pk); }
+const seq=v=>(v+1)%256;
+
+// ---------------------------------------------------------------- forming a team
+function teamSet(k,n){ TEAM.pk=k; TEAM.tp=k; TEAM.pn=n; TEAM.tq=0; TEAM.lf=0; TEAM.bot=null; TEAM.since=performance.now(); TEAM.gone=0; TEAM.seen={qs:-1,ps:-1,ts:-1,td:-1}; toast('👥 Ihr seid ein Team: '+(save.name||'Du')+' & '+n+'. Funk: T · Markierung: Q · Aufgaben im Menü (M).',4200); tone([523,659,784,1047],0.08,0.3,0.1); teamHud(); }
+function teamLeave(silent){ if(TEAM.task) taskEnd(); TEAM.pk=0; TEAM.tp=0; TEAM.tq=0; TEAM.lf=0; TEAM.bot=null; TEAM.pn=''; if(!silent) toast('👥 Team aufgelöst.',1800); teamHud(); }
+function teamSearch(){ if(hasTeam()) return; if(!Net.send){ toast('Gerade bist du allein online. Spiel mit dem Ersatzpartner!',3000); botOffer(); return; } TEAM.lf=1; TEAM.lfT=60; const c=UMZUG&&save.cls?KLASSEN.indexOf(save.cls):-1; TEAM.lc=c>=0?c+1:0; toast('🔎 Suche Partner … (bis zu 60 Sekunden)',3000); teamHud(); }
+function botOffer(){ dlg('👥 Ersatzpartner','Gerade ist niemand zum Mitspielen da. Max aus der 7b springt ein: Er hilft dir als Lotse oder stellt sich beim Doppelschloss an den zweiten Schalter.',[['Mit Max spielen',()=>{ closeDlg(); TEAM.bot={name:'Max (Ersatz)',t:0,last:0,dist:0,sw:0,swT:0,pingT:0}; TEAM.lf=0; TEAM.pk=0; TEAM.tp=0; toast('👥 Max ist dein Ersatzpartner. Wähle eine Aufgabe im Menü (M) → Team.',3600); teamHud(); },'Max kann nur vorgegebene Sätze funken – genau wie alle anderen.','Los']]); }
+function teamTick(dt){ const T=TEAM, me_k=T.k;
+  // invitations to me
+  if(!hasTeam()) for(const [id,s] of peerT()){ const t=s.T; if(t.tq===me_k&&!T.asked[t.k]&&!(T.ign[t.k]>performance.now())){ T.asked[t.k]=1; dlg('👥 Team-Anfrage',s.n+' möchte mit dir ein Team bilden.',[['Annehmen',()=>{ closeDlg(); teamSet(t.k,s.n); },'Ihr könnt euch dann vorgegebene Nachrichten schicken und gemeinsame Aufgaben lösen.','Annehmen'],['Ablehnen',()=>{ closeDlg(); T.ign[t.k]=performance.now()+120000; },'','Nein danke']]); } if(t.tq!==me_k) delete T.asked[t.k]; }
+  // my invitation accepted
+  if(T.tq&&!T.pk){ for(const [id,s] of peerT()) if(s.T.k===T.tq&&s.T.tp===me_k) teamSet(s.T.k,s.n); T.tqT-=dt; if(T.tqT<=0&&!T.pk){ T.tq=0; toast('Keine Antwort auf deine Team-Anfrage.',2000); } }
+  // matchmaking: everybody looking computes the same pairing
+  if(T.lf&&!T.pk){ T.lfT-=dt; const L=[[me_k,T.lc]]; for(const [id,s] of peerT()) if(s.T.lf===1&&s.T.md===(UMZUG?1:0)&&!s.T.tp) L.push([s.T.k,s.T.lc]);
+    L.sort((a,b)=>(a[1]-b[1])||(a[0]-b[0])); const i=L.findIndex(x=>x[0]===me_k), j=i%2===0?i+1:i-1;
+    if(j>=0&&j<L.length){ const pk=L[j][0]; for(const [id,s] of peerT()) if(s.T.k===pk){ teamSet(pk,s.n); break; } }
+    if(T.lfT<=0&&!T.pk){ T.lf=0; teamHud(); botOffer(); } }
+  // keep the team alive
+  if(T.pk){ const p=partner(); const ok=p&&(p[1].T.tp===me_k||performance.now()-T.since<8000); if(p) T.pn=p[1].n; if(!ok){ T.gone+=dt; if(T.gone>8){ toast('👥 '+pName()+' ist nicht mehr da – Team aufgelöst.',3000); teamLeave(true); } } else T.gone=0; if(p) teamRecv(p[0],p[1].T); }
+  if(T.bot) botTick(dt);
+  taskTick(dt); pingTick(dt); }
+
+// ---------------------------------------------------------------- quick messages and pings
+function qSend(i){ if(!hasTeam()){ toast('Funk geht nur im Team (Menü → Team).',2000); return; } TEAM.qm=i; TEAM.qs=seq(TEAM.qs); showMsg(save.name||'Du',i,true); }
+function showMsg(from,i,mine){ const e=$('tmsg'); e.textContent=(mine?'📡 Du: ':'📡 '+from+': ')+QMSG[i]; e.style.display='block'; e.classList.remove('in'); void e.offsetWidth; e.classList.add('in'); clearTimeout(e._h); e._h=setTimeout(()=>e.style.display='none',4200); if(!mine) tone([988,1319],0.05,0.12,0.09); }
+function peerBubble(id,i){ const av=peerAv.get(id); if(!av) return; const u=av.userData; if(u.qb){ av.remove(u.qb); u.qb.material.map.dispose(); } const sp=textSprite(QMSG[i],'rgba(255,210,63,.96)','#14202e',0.3); sp.position.y=2.6; av.add(sp); u.qb=sp; clearTimeout(u.qbT); u.qbT=setTimeout(()=>{ if(u.qb===sp){ av.remove(sp); u.qb=null; } },4000); }
+function pingDo(here){ if(!hasTeam()){ toast('Markierungen gehen nur im Team.',2000); return; } let x=me.x, z=me.z;
+  if(!here){ const sx=Math.sin(me.yaw), sz=Math.cos(me.yaw); for(let d=0.5;d<=25;d+=0.5){ const nx=me.x+sx*d, nz=me.z+sz*d; if(standY(nx,nz,me.y)===null) break; x=nx; z=nz; } }
+  TEAM.px=x; TEAM.pz=z; TEAM.pf=me.f; TEAM.ps=seq(TEAM.ps); pingAdd(x,z,me.f,true); tone([1175],0.05,0.1,0.08); }
+const pingGeo=new THREE.CylinderGeometry(0.18,0.18,4,10,1,true);
+function pingAdd(x,z,f,mine,label){ const col=mine?0x3ee6ff:0xff9f1c; const m=new THREE.Mesh(pingGeo,new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.75,depthTest:false,depthWrite:false})); m.renderOrder=6; m.position.set(x,LV[f]+2,z);
+  const sp=textSprite(label||(mine?'📍 Deine Markierung':'📍 '+pName()),mine?'rgba(62,230,255,.95)':'rgba(255,159,28,.95)','#14202e',0.26); sp.material.depthTest=false; sp.renderOrder=7; sp.position.set(x,LV[f]+2.55,z);
+  scene.add(m); scene.add(sp); for(const p of TEAM.pings.filter(p=>p.mine===mine)) pingDel(p); TEAM.pings.push({x,z,f,mine,m,sp,t:25}); }
+function pingDel(p){ scene.remove(p.m); scene.remove(p.sp); p.m.material.dispose(); p.sp.material.map.dispose(); p.sp.material.dispose(); TEAM.pings.splice(TEAM.pings.indexOf(p),1); }
+function pingTick(dt){ for(const p of TEAM.pings.slice()){ p.t-=dt; const same=p.f===me.f; p.m.visible=p.sp.visible=same||Math.abs(p.f-me.f)<=1; p.m.material.opacity=(same?0.75:0.3)*(0.75+0.25*Math.sin(performance.now()/200)); if(p.t<=0) pingDel(p); }
+  if(TEAM.pings.length){ const p=TEAM.pings.find(p=>!p.mine); if(p){ const d=Math.round(Math.hypot(p.x-me.x,p.z-me.z)); $('tping').textContent='📍 '+pName()+': '+d+' m'+(p.f!==me.f?' · '+FN[p.f]+(p.f>me.f?' ▲':' ▼'):''); $('tping').style.display='block'; } else $('tping').style.display='none'; } else $('tping').style.display='none'; }
+function teamRecv(id,t){ const S=TEAM.seen;
+  if(t.qs!==S.qs){ if(S.qs>=0&&t.qm) { showMsg(pName(),t.qm); peerBubble(id,t.qm); } S.qs=t.qs; }
+  if(t.ps!==S.ps){ if(S.ps>=0) pingAdd(t.px,t.pz,t.pf,false); S.ps=t.ps; }
+  if(t.ts!==S.ts){ if(S.ts>=0&&t.tk) taskJoin(t.tk,t.tr); else if(S.ts>=0&&!t.tk&&TEAM.task) { toast('👥 '+pName()+' hat die Aufgabe beendet.',2200); taskEnd(); } S.ts=t.ts; }
+  if(t.td!==S.td){ if(S.td>=0&&TEAM.task&&!TEAM.task.done) taskWin(); S.td=t.td; } }
+
+// ---------------------------------------------------------------- tasks
+const TROOMS=(()=>{ const L=[]; WD.floors.forEach((F,f)=>{ for(const l of F.labels){ if(l.closed) continue; const nm=dispOf(l)||''; if(!/Chemie|Biologie|Physik|Kunst|Musik|EDV|WC|Werk|Kletter|Bibliothek|Küchen-Ausgabe|Mensa|Differenzierung|Schülercafé|Turnhalle/.test(nm)) continue; if(/Lehrer|Sammlung|Vorbereitung|Lager/.test(nm)) continue;
+    const x=cw(l[1]), z=cw(l[2]); if(inZone(f,x,z)) continue; const cx=Math.floor(x/C), cy=Math.floor(z/C); if(RESTR[f]&&RESTR[f][cy*GW+cx]) continue; L.push({f,x,z,nm,no:l[4]||''}); } });
+  L.sort((a,b)=>(a.f-b.f)||(a.no<b.no?-1:a.no>b.no?1:0)); return L; })();
+function spotNear(r){ for(let d=0;d<4;d+=0.4) for(let a=0;a<6.28;a+=0.7){ const x=r.x+Math.sin(a)*d, z=r.z+Math.cos(a)*d; if(standY(x,z,LV[r.f])!==null) return {x,z}; } return {x:r.x,z:r.z}; }
+function hintOf(r){ const n=r.nm, H=[[/Chemie/,'dort, wo es manchmal nach Experimenten riecht'],[/Biologie/,'dort, wo Mikroskope und Skelette wohnen'],[/Physik/,'dort, wo Strom und Magnete erforscht werden'],[/Kunst/,'dort, wo gemalt und gebastelt wird'],[/Musik/,'dort, wo es laut sein darf'],[/EDV/,'in einem Raum voller Computer'],[/WC/,'dort, wo man sich die Hände wäscht'],[/Werk/,'dort, wo gesägt und geschraubt wird'],[/Kletter/,'dort, wo man die Wände hochgeht'],[/Bibliothek/,'in einem Raum voller Bücher'],[/Küchen|Mensa/,'dort, wo es Mittagessen gibt'],[/Schülercafé/,'dort, wo man in der Pause chillt'],[/Turnhalle/,'dort, wo Bälle fliegen'],[/Differenzierung/,'in einer offenen Lernzone im Flur']]; const h=H.find(x=>x[0].test(n)); return 'Dein Schalter liegt '+(h?h[1]:'in Raum '+r.no)+' – im '+FN[r.f]+'.'; }
+const plateGeo=new THREE.CylinderGeometry(0.6,0.6,0.05,24);
+function taskStart(kind,role){ if(!hasTeam()) return; closeMenu(); closeDlg(); if(TEAM.task) taskEnd(); if(!TROOMS.length){ toast('Keine passenden Räume gefunden.',2000); return; }
+  const idx=Math.floor(Math.random()*TROOMS.length); TEAM.tk=kind*1000+idx; TEAM.tr=role; TEAM.ts=seq(TEAM.ts); taskJoin(TEAM.tk,role,true); }
+function taskJoin(tk,role,mine){ if(TEAM.task) taskEnd(true); const kind=Math.floor(tk/1000), idx=tk%1000; if(!mine){ TEAM.tk=0; }
+  const t={kind,idx,done:false,mine,t:0};
+  if(kind===1){ // Lotsen-Mission: role 1 = initiator is Lotse
+    const iLotse=mine?role===1:role!==1; t.lotse=iLotse; t.r=TROOMS[idx%TROOMS.length]; t.p=spotNear(t.r);
+    if(iLotse){ t.pin=new THREE.Mesh(new THREE.CylinderGeometry(0.8,0.8,3.4,20,1,true),new THREE.MeshBasicMaterial({color:0xff9f1c,transparent:true,opacity:.35,side:THREE.DoubleSide,depthWrite:false})); t.pin.position.set(t.p.x,LV[t.r.f]+1.7,t.p.z); scene.add(t.pin);
+      dlg('🧭 Lotsen-Mission – du bist Lotse',pName()+' läuft „blind“ (ohne Karte und Navi). Nur du kennst das Ziel: '+t.r.nm+' ('+FN[t.r.f]+'). Es ist auf deiner Karte orange markiert. Führe '+pName()+' mit dem Funk (Taste T oder 💬) und Markierungen (Taste Q oder 📍) dorthin!',[]); }
+    else { naviOff(true); $('mapwrap').style.visibility='hidden'; dlg('🙈 Lotsen-Mission – Blindflug','Du hast keine Karte und kein Navi. '+pName()+' kennt das Ziel und führt dich per Funk und Markierungen hin. Achte auf die gelben Nachrichten und orangen Markierungen!',[]); } }
+  else { // Doppelschloss: two switches on different floors
+    const A=TROOMS[idx%TROOMS.length]; let B=null; for(let k=1;k<TROOMS.length;k++){ const c=TROOMS[(idx*7+k*13)%TROOMS.length]; if(c.f!==A.f&&c!==A){ B=c; break; } } if(!B) B=TROOMS[(idx+1)%TROOMS.length];
+    const mineA=mine?true:false; t.my=mineA?A:B; t.other=mineA?B:A; t.mp=spotNear(t.my); t.op=spotNear(t.other);
+    t.plate=new THREE.Mesh(plateGeo,new THREE.MeshBasicMaterial({color:0x7cfc8a,transparent:true,opacity:.85})); t.plate.position.set(t.mp.x,LV[t.my.f]+0.03,t.mp.z); scene.add(t.plate);
+    dlg('🔐 Doppelschloss','Das Doppelschloss öffnet sich nur, wenn ihr beide gleichzeitig auf euren Schaltern steht. '+hintOf(t.my)+' Der Schalter ist eine grün leuchtende Platte am Boden. Sobald du draufstehst, bekommt '+pName()+' automatisch Bescheid.',[]); }
+  TEAM.task=t; teamHud(); }
+function taskEnd(quiet){ const t=TEAM.task; if(!t) return; $('mapwrap').style.visibility=''; if(t.pin){ scene.remove(t.pin); } if(t.plate) scene.remove(t.plate); TEAM.task=null; TEAM.sw=0; if(t.mine||TEAM.tk){ TEAM.tk=0; if(!quiet) TEAM.ts=seq(TEAM.ts); } teamHud(); }
+function taskWin(){ const t=TEAM.task; if(!t||t.done) return; t.done=true; save.score+=t.kind===1?30:40; persist(); refreshStats(); tone([523,659,784,1047,1319],0.09,0.5,0.12);
+  dlg(t.kind===1?'🧭 Ziel erreicht!':'🔓 Doppelschloss geknackt!',t.kind===1?'Teamarbeit! '+(t.lotse?pName()+' hat dank dir':'Du hast dank '+pName())+' den Raum „'+t.r.nm+'“ gefunden. +30 Punkte. Tauscht doch mal die Rollen!':'Ihr habt gleichzeitig auf beiden Schaltern gestanden. +40 Punkte. Im Menü (M → Team) wartet schon das nächste Schloss.',[]);
+  setTimeout(()=>{ if(TEAM.task===t) taskEnd(true); },500); }
+function taskTick(dt){ const t=TEAM.task; if(!t||t.done) return; t.t+=dt;
+  if(t.kind===1){ if(!t.lotse&&me.f===t.r.f&&Math.abs(me.y-LV[t.r.f])<0.5&&Math.hypot(me.x-t.p.x,me.z-t.p.z)<2.6){ TEAM.td=seq(TEAM.td); taskWin(); }
+    if(t.lotse&&TEAM.bot) {} }
+  else { const on=me.f===t.my.f&&Math.abs(me.y-LV[t.my.f])<0.5&&Math.hypot(me.x-t.mp.x,me.z-t.mp.z)<0.9; if(on&&!TEAM.sw){ TEAM.sw=1; if(!TEAM.bot) qSend(13); else showMsg(save.name||'Du',13,true); pingDo(true); } else if(!on&&TEAM.sw) TEAM.sw=0;
+    t.plate.material.color.setHex(TEAM.sw?0xffd23f:0x7cfc8a);
+    const p=partner(), psw=TEAM.bot?TEAM.bot.sw:(p&&p[1].T.sw); if(TEAM.sw&&psw){ t.both=(t.both||0)+dt; if(t.both>0.4){ TEAM.td=seq(TEAM.td); taskWin(); } } else t.both=0; } }
+function teamDraw(g,P,f,scale){ if(!TEAM_OK) return; const t=TEAM.task; if(t&&t.kind===1&&t.lotse&&t.r.f===f){ const p=P(t.p.x,t.p.z); g.fillStyle='#ff9f1c'; g.strokeStyle='#14202e'; g.lineWidth=2*scale; g.beginPath(); g.arc(p[0],p[1],7*scale,0,7); g.fill(); g.stroke(); }
+  for(const q of TEAM.pings) if(q.f===f){ const p=P(q.x,q.z); g.fillStyle=q.mine?'#3ee6ff':'#ff9f1c'; g.beginPath(); g.arc(p[0],p[1],5*scale,0,7); g.fill(); } }
+function blindNo(){ const t=TEAM_OK&&TEAM.task; if(t&&t.kind===1&&!t.lotse&&!t.done){ toast('🙈 Blindflug: Die Karte hat dein Lotse '+pName()+'.',2200); return true; } return false; }
+
+// ---------------------------------------------------------------- substitute partner (bot)
+function botTick(dt){ const b=TEAM.bot, t=TEAM.task; if(!t||t.done) return;
+  const say=i=>{ const now=performance.now(); if(i===b.lm&&now-b.lmT<11000) return; b.lm=i; b.lmT=now; showMsg(b.name,i); };
+  if(t.kind===2){ if(!b.sw){ b.swT=(b.swT||(20+Math.random()*25))-dt; if(b.swT<=0){ b.sw=1; say(13); pingAdd(t.op.x,t.op.z,t.other.f,false,'📍 Max: Schalter'); } } return; }
+  if(t.lotse) return; // bot only guides
+  b.t-=dt; if(b.t>0) return; b.t=4.2; if(LIFE.stage<2) return;
+  if(!b.first){ b.first=1; if(t.r.f!==me.f){ say(t.r.f>me.f?6:7); return; } }
+  const a=nodeNear(me.x,me.z,me.y,8), z=nodeNear(t.p.x,t.p.z,LV[t.r.f],10); if(a<0||z<0||!bfs(a,z)) return; const nodes=trace(z).reverse(); const P=mkPath(nodes,{x:me.x,y:me.y,z:me.z},{x:t.p.x,y:LV[t.r.f],z:t.p.z}); const m=P.length/3;
+  let i=0, acc=0; for(;i<m-1&&acc<7;i++) acc+=Math.hypot(P[i*3+3]-P[i*3],P[i*3+5]-P[i*3+2]); const dy=P[i*3+1]-me.y, dist=Math.hypot(t.p.x-me.x,t.p.z-me.z);
+  if(t.r.f===me.f&&dist<6){ say(1); return; }
+  if(b.last&&b.dist&&acc>0&&dist-b.dist>4&&t.r.f===me.f){ b.dist=dist; say(9); return; } b.dist=dist;
+  if(dy>1.2){ say(6); } else if(dy<-1.2){ say(7); } else { const want=Math.atan2(P[i*3]-me.x,P[i*3+2]-me.z); let d=want-me.yaw; d=Math.atan2(Math.sin(d),Math.cos(d)); say(Math.abs(d)<0.5?5:(d>0?3:4)); }
+  b.pingT-=4.2; if(b.pingT<=0){ b.pingT=14; let j=0, s=0; for(;j<m-1&&s<12;j++) s+=Math.hypot(P[j*3+3]-P[j*3],P[j*3+5]-P[j*3+2]); pingAdd(P[j*3],P[j*3+2],floorOf(P[j*3+1]),false,'📍 Max: hierhin'); }
+  b.last=1; }
+
+// ---------------------------------------------------------------- UI
+function teamHud(){ const e=$('teamInfo'); if(!TEAM_OK) return; if(!hasTeam()&&!TEAM.lf){ e.style.display='none'; $('tbtns').style.display='none'; return; } e.style.display='block'; $('tbtns').style.display=hasTeam()?'flex':'none';
+  const t=TEAM.task; e.textContent=TEAM.lf&&!hasTeam()?'🔎 Suche Partner …':'👥 Team mit '+pName()+(t?(t.kind===1?(t.lotse?' · Lotse → '+t.r.nm:' · Blindflug'):' · Doppelschloss'):''); }
+function quickOpen(){ if(!hasTeam()){ teamMenu(); return; } const q=$('quick'); q.style.display=q.style.display==='grid'?'none':'grid'; }
+(function(){ const q=$('quick'); QMSG.forEach((m,i)=>{ if(!i) return; const b=document.createElement('button'); b.textContent=(i<=9?i+' ':'')+m; b.addEventListener('click',()=>{ qSend(i); q.style.display='none'; }); q.append(b); });
+  const b2=document.createElement('button'); b2.textContent='📍 Markierung hier'; b2.className='sec'; b2.addEventListener('click',()=>{ pingDo(true); q.style.display='none'; }); q.append(b2);
+  $('tbQuick').addEventListener('click',quickOpen); $('tbPing').addEventListener('click',()=>pingDo(false)); })();
+window.addEventListener('keydown',e=>{ if(!TEAM_OK||!me.started||typing()) return; if(e.code==='KeyT'){ quickOpen(); }
+  else if(e.code==='KeyQ'&&hasTeam()) pingDo(false);
+  else if(/^Digit[1-9]$/.test(e.code)&&$('quick').style.display==='grid'){ qSend(+e.code.slice(5)); $('quick').style.display='none'; }
+  else if((e.code==='KeyK'||e.code==='KeyN')&&blindNo()){ e.stopImmediatePropagation(); } },true);
+function teamMenu(){ const opts=[]; if(!hasTeam()){ opts.push(['🔎 Partner suchen',()=>{ closeDlg(); teamSearch(); },'Das Spiel verbindet dich mit jemandem, der gerade auch sucht – zuerst aus deiner Klasse.','Suchen']);
+    opts.push(['🤖 Mit Ersatzpartner spielen',()=>{ closeDlg(); botOffer(); },'Max aus der 7b springt ein, wenn gerade niemand da ist.','Max holen']); }
+  else { opts.push(['🧭 Lotsen-Mission: Ich bin Lotse',()=>taskStart(1,1),'Du siehst das Ziel, dein Partner läuft blind.','Start']); if(TEAM.bot) opts.pop();
+    opts.push(['🙈 Lotsen-Mission: Ich laufe blind',()=>taskStart(1,2),'Dein Partner sieht das Ziel und führt dich hin.','Start']);
+    opts.push(['🔐 Doppelschloss',()=>taskStart(2,1),'Zwei Schalter in zwei Stockwerken – nur gleichzeitig geht das Schloss auf.','Start']);
+    if(TEAM.task) opts.push(['⏹ Aufgabe abbrechen',()=>{ closeDlg(); taskEnd(); },'','Abbrechen']);
+    opts.push(['👋 Team verlassen',()=>{ closeDlg(); teamLeave(); },'','Verlassen']); }
+  dlg('👥 Team'+(hasTeam()?' mit '+pName():''),hasTeam()?'Funk: Taste T (oder 💬) – nur vorgegebene Nachrichten. Markierung: Taste Q (oder 📍) setzt einen Punkt dorthin, wohin du schaust.':'Stell dich neben einen anderen Spieler und drück E, um ihn ins Team einzuladen. Oder such dir hier einen Partner. Es gibt keinen freien Chat – nur vorgegebene Nachrichten.',opts); }
+// invite by walking up to another player
+const INV={get f(){ const p=invPeer(); return p?p[1].f:-1; },get x(){ const p=invPeer(); return p?p[1].x:0; },get z(){ const p=invPeer(); return p?p[1].z:0; },get y(){ const p=invPeer(); return p?p[1].y:0; },r:2.8,w:0.9,when:()=>!hasTeam()&&!TEAM.tq&&!!invPeer(),label:()=>'👥 '+invPeer()[1].n+' ins Team einladen',fn:()=>{ const p=invPeer(); if(!p) return; TEAM.tq=p[1].T.k; TEAM.tqT=25; toast('👥 Anfrage an '+p[1].n+' gesendet …',2400); }};
+function invPeer(){ let b=null, bd=2.8; for(const [id,s] of peerT()){ if(Math.abs(s.y-me.y)>1) continue; const d=Math.hypot(s.x-me.x,s.z-me.z); if(d<bd){ bd=d; b=[id,s]; } } return b; }
+EGGACT.push(INV);
+TEAM_OK=true;
+PLUS.TEAM=TEAM; PLUS.TROOMS=TROOMS; PLUS.qSend=qSend; PLUS.pingDo=pingDo; PLUS.taskStart=taskStart; PLUS.teamSet=teamSet; PLUS.teamMenu=teamMenu; PLUS.botOffer=botOffer; PLUS.teamSearch=teamSearch;
 
 // ================================================================ main loop
 let last=performance.now(), sendAcc=0, uiAcc=0, lastF=-1;
