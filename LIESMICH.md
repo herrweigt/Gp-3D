@@ -10,7 +10,7 @@ GitHub Pages liefert nur Dateien aus und kann keinen Spielserver betreiben. Die 
 1. Bei https://render.com mit dem GitHub-Konto anmelden (kostenloser Tarif).
 2. „New +“ → „Blueprint“ → Repository `Gp-3D` wählen. Die Datei `render.yaml` legt alles fest (Node, Region Frankfurt, `npm install`, `npm start`).
 3. Nach dem ersten Start zeigt Render eine Adresse wie `https://gp-3d.onrender.com`.
-4. Diese Adresse in `index.html` eintragen: nach `const GP_SERVER=''` suchen und daraus `const GP_SERVER='wss://gp-3d.onrender.com/ws'` machen (https → wss, `/ws` anhängen). Speichern, hochladen.
+4. (Bereits erledigt: `wss://gp-3d-7dsj.onrender.com/ws` ist eingetragen.) Bei einer neuen Adresse in `index.html` eintragen: nach `const GP_SERVER=''` suchen und daraus `const GP_SERVER='wss://gp-3d.onrender.com/ws'` machen (https → wss, `/ws` anhängen). Speichern, hochladen.
 5. Fertig: Alle, die die GitHub-Pages-Adresse öffnen, sind in derselben Welt. Zum Testen ohne Änderung geht auch `…/Gp-3D/?server=wss://gp-3d.onrender.com/ws`.
 
 Gut zu wissen: Der kostenlose Render-Server schläft nach 15 Minuten ohne Besucher ein. Der Erste wartet dann bis zu einer Minute („Spielserver wird geweckt …“), das Spiel läuft in der Zeit solo weiter.
@@ -77,7 +77,7 @@ Bitte die Klasse anweisen, Fantasienamen zu verwenden. Vor dem Einsatz mit Schü
 
 ## Navi, Durchsagen, Fundbüro, Aufsicht-Sterne (22.11.2026)
 
-- Navi (Taste N oder Karte K): Raum oder Klasse suchen bzw. in der Karte auf einen Raum tippen. Leuchtende Pfeile am Boden und eine türkise Linie auf der Karte führen hin, auch über Treppen. In der Rallye ist das Navi aus.
+- Navi (Taste N oder Karte K): nur zentrale Orte (Klassenzimmer, Sekretariat, Schulleitung, Lehrerzimmer, Mensa, Turnhalle, Bibliothek, Hausmeister …) – Fach- und Nebenräume muss man selbst finden. Leuchtende Pfeile am Boden und eine türkise Linie auf der Karte führen hin, auch über Treppen. In der Rallye ist das Navi aus.
 - Durchsagen: alle 1–2,5 Minuten ein gelbes Banner oben mit Gong (Hinweise, Witze, Fundsachen-Tipps).
 - Fundbüro: 8 Fundsachen liegen in Räumen. Mit Namen und Klasse → ins Klassenzimmer dieser Klasse bringen, ohne Namen → Sekretariat. Je 15 Punkte, alle zusammen +50.
 - Aufsicht-Sterne: Rennen im Gebäude in der Nähe einer Lehrkraft, des Hausmeisters oder der Schulleitung und Müll fallen lassen geben einen Stern. Sterne verfallen nach 45 s Wohlverhalten, beim Müllwegwerfen oder für eine zurückgebrachte Fundsache. Bei drei Sternen: Durchsage mit dem Spitznamen, Rennen gesperrt, bis man sich im Sekretariat meldet. Draußen darf gerannt werden. Lehrkraft- und Gottmodus sind ausgenommen.

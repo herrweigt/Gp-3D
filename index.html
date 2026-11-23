@@ -1007,7 +1007,7 @@ function setPeers(list){ Net.peers.clear(); for(const [id,st] of list){ const c=
 function myState(){ return {n:save.name||'Gast',c:save.color,x:Math.round(me.x*100)/100,z:Math.round(me.z*100)/100,y:Math.round(me.y*100)/100,f:me.f,r:Math.round(me.rot*100)/100,s:save.score,m:me.cl?2:me.moving?1:0,w:me.wave>0?1:0,j:Math.round(me.jy*100)/100}; }
 function setNet(mode,label){ Net.mode=mode; Net.label=label; $('net').textContent=label; }
 // Mehrspieler auf GitHub Pages: Adresse des eigenen Spielservers (server.js, z. B. bei Render) hier eintragen, z. B. 'wss://gp-3d.onrender.com/ws'
-const GP_SERVER='';
+const GP_SERVER='wss://gp-3d-7dsj.onrender.com/ws';
 async function initNet(){
   if(window.claude&&typeof window.claude.use==='function'){
     let rm=null; try{ rm=await window.claude.use('room'); }catch(e){}
@@ -1769,11 +1769,13 @@ var PLUS_OK=false; const PLUS={};
 // ---------------------------------------------------------------- 1) Navi: route over the walk graph, arrows on the floor
 const NAV={on:false,e:null,node:-1,pts:null,k:0,re:0,age:0,ph:0,warn:0};
 const NAVLIST=(()=>{ const L=[], seen=new Set(); const add=(f,x,z,txt,sort,kind)=>{ const k=f+'|'+txt; if(seen.has(k)) return; seen.add(k); L.push({f,x,z,txt,sort,kind}); };
-  const cls=classes.filter(c=>UMZUG?c.own:true); for(const c of cls){ const r=c.r; add(c.f,cw((r[1]+r[3])/2),cw((r[2]+r[4])/2),'Klasse '+c.cn.toUpperCase()+' · '+c.disp,'0'+c.cn,'k'); }
-  WD.floors.forEach((F,f)=>{ for(const l of F.labels){ if(l.closed) continue; const no=l[4]||''; if(/^(TR|F) /.test(no)) continue; const nm=dispOf(l); if(!nm||/^Flur|Luftraum|Schacht|Technik|Lüftung|Heizung|Elektro|ELT|EDV-Technik|Reinig|Lager|Abstell|Hausanschluss|Sprinkler|Aufzug/.test(nm)) continue;
-    const x=cw(l[1]), z=cw(l[2]); if(inZone(f,x,z)) continue; const cx=Math.floor(x/C), cy=Math.floor(z/C); if(RESTR[f]&&RESTR[f][cy*GW+cx]&&!/Lehrer/.test(nm)) continue;
-    add(f,x,z,nm+' ('+FN[f]+')',(f+1)+(no||'~'+nm),'r'); } });
-  if(typeof OUT!=='undefined') for(const o of OUT.slice(2)) if(!inZone(G,o[1],o[2])) add(G,o[1],o[2],o[0]+' (draußen)','9'+o[0],'o');
+  const seenC=new Set(), cls=classes.filter(c=>UMZUG?c.own:/Klassenraum|Klassenzimmer/.test(c.disp)).filter(c=>!seenC.has(c.cn)&&seenC.add(c.cn)); for(const c of cls){ const r=c.r; add(c.f,cw((r[1]+r[3])/2),cw((r[2]+r[4])/2),'Klasse '+c.cn.toUpperCase()+' · '+c.disp,'0'+c.cn,'k'); }
+  // nur zentrale Orte – Fach- und Nebenräume bleiben ein Rätsel
+  const KEEP=[[/Sekretariat/,'Sekretariat'],[/Schulleitung|Direktor/,'Schulleitung'],[/Lehrerzimmer| Lehrkräfte$|Lehrer Arbeitsraum/,'Lehrerzimmer'],[/Turnhalle|Sporthalle|Dreifach/,'Turnhalle'],[/Mensa|Speisesaal|Küchen-Ausgabe/,'Mensa'],[/Bibliothek/,'Bibliothek'],[/ Pausenverkauf$|Kiosk/,'Pausenverkauf'],[/Hausmeister/,'Hausmeister'],[/Aula/,'Aula']].concat(UMZUG?[]:[[/Erste.?Hilfe|Sanitäts/,'Erste Hilfe']]);
+  WD.floors.forEach((F,f)=>{ for(const l of F.labels){ if(l.closed) continue; const nm=dispOf(l)||''; const k=KEEP.find(q=>q[0].test(nm)); if(!k) continue;
+    const x=cw(l[1]), z=cw(l[2]); if(inZone(f,x,z)) continue; const no=(l[4]||'').replace(/^(TR|F) .*/,'');
+    add(f,x,z,k[1]+(no?' · '+no:'')+' ('+FN[f]+')','1'+k[1]+f,'r'); } });
+  { const by={}; for(const e of L.filter(e=>e.kind==='r')){ const b=e.txt.split(' ')[0]; (by[b]=by[b]||[]).push(e); } for(const b in by){ const g=by[b]; if(g.length>1&&b!=='Turnhalle'){ g.slice(1).forEach(e=>L.splice(L.indexOf(e),1)); } else if(g.length>2){ g.slice(2).forEach(e=>L.splice(L.indexOf(e),1)); } } }
   L.sort((a,b)=>a.sort<b.sort?-1:a.sort>b.sort?1:0); return L; })();
 const navGeo=(()=>{ const g=new THREE.BufferGeometry(), T=[0,0.30],L=[-0.34,-0.02],R=[0.34,-0.02],I=[0,0.10],Li=[-0.34,-0.22],Ri=[0.34,-0.22], tri=[T,L,Li, T,Li,I, T,I,Ri, T,Ri,R], v=[]; for(const p of tri) v.push(p[0],0,p[1]); g.setAttribute('position',new THREE.Float32BufferAttribute(v,3)); return g; })();
 const navMat=new THREE.MeshBasicMaterial({color:0x3ee6ff,transparent:true,opacity:0.85,side:THREE.DoubleSide,depthWrite:false});
@@ -1793,9 +1795,9 @@ function naviTick(dt){ if(!NAV.on) return; if(naviBlocked()){ naviOff(true); ret
   if(e.f===me.f&&Math.abs(me.y-LV[e.f])<0.4&&Math.hypot(e.x-me.x,e.z-me.z)<2.4){ toast('🧭 Ziel erreicht: '+e.txt,2600); tone([784,988,1319],0.09,0.3,0.12); naviOff(true); return; }
   const m=P.length/3; let bk=NAV.k, bd=1e9; for(let i=Math.max(0,NAV.k-6);i<Math.min(m,NAV.k+60);i++){ const d=Math.hypot(P[i*3]-me.x,P[i*3+2]-me.z)+Math.abs(P[i*3+1]-me.y)*2; if(d<bd){ bd=d; bk=i; } } NAV.k=bk;
   NAV.re-=dt; if(bd>3.2&&NAV.re<=0){ NAV.re=1.2; if(!naviRoute()){ NAV.re=3; } return; }
-  NAV.ph=(NAV.ph+dt*1.4)%1.2; let n=0, acc=-NAV.ph+0.9, walked=0;
+  NAV.ph=(NAV.ph+dt*1.4)%1.2; let n=0, acc=NAV.ph-0.3, walked=0;
   for(let i=bk;i<m-1&&n<60&&walked<44;i++){ const x0=P[i*3],y0=P[i*3+1],z0=P[i*3+2],x1=P[i*3+3],y1=P[i*3+4],z1=P[i*3+5], L=Math.hypot(x1-x0,z1-z0); if(L<1e-4) continue;
-    while(acc<=L&&n<60){ const t=acc/L, x=x0+(x1-x0)*t, z=z0+(z1-z0)*t, y=y0+(y1-y0)*t; if(Math.abs(y-me.y)<2.6){ _o.position.set(x,y+0.07,z); _o.rotation.set(0,Math.atan2(x1-x0,z1-z0),0); _o.scale.setScalar(1); _o.updateMatrix(); navMesh.setMatrixAt(n++,_o.matrix); } acc+=1.2; }
+    while(acc<=L&&n<60){ if(acc<0){ acc+=1.2; continue; } const t=acc/L, x=x0+(x1-x0)*t, z=z0+(z1-z0)*t, y=y0+(y1-y0)*t; if(Math.abs(y-me.y)<2.6){ _o.position.set(x,y+0.07,z); _o.rotation.set(0,Math.atan2(x1-x0,z1-z0),0); _o.scale.setScalar(1); _o.updateMatrix(); navMesh.setMatrixAt(n++,_o.matrix); } acc+=1.2; }
     acc-=L; walked+=L; }
   navMesh.count=n; navMesh.instanceMatrix.needsUpdate=true; navMat.opacity=0.6+0.3*Math.sin(performance.now()/260); }
 function navDraw(g,P,f,scale){ if(!PLUS_OK||!NAV.on||!NAV.pts) return; const Q=NAV.pts, m=Q.length/3; g.strokeStyle='#14a9c9'; g.lineWidth=3*scale; g.lineJoin='round'; g.beginPath(); let pen=false;
