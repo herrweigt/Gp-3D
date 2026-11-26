@@ -59,8 +59,11 @@
   #wx{font-size:12px;color:var(--mut);margin-bottom:3px}
   #teamInfo,#tping{display:none;font-size:12px;font-weight:700;color:#7cfc8a;margin-bottom:3px}
   #tping{color:#ff9f1c}
-  #tbtns{display:none;gap:6px;margin:4px 0}
-  #tbtns button{padding:5px 8px;font-size:12px}
+  #teamBtns{display:none;gap:6px;margin:4px 0}
+  #teamBtns button{padding:5px 8px;font-size:12px}
+  #btnJump,#btnRun{padding:14px 16px;font-size:15px;touch-action:none}
+  #btnRun.on{background:var(--acc);color:var(--ink)}
+  @media (orientation:landscape) and (max-height:600px){ #tbtns{right:182px;bottom:10px;grid-template-columns:auto auto;gap:6px} #tbtns button{padding:7px 10px;font-size:13px} #tbtns #btnJump{order:-2;padding:18px 20px;font-size:16px} #tbtns #btnRun{order:-1;padding:18px 14px;font-size:16px} #act{bottom:60px} #where{left:36%} }
   #tmsg{position:fixed;left:50%;top:64px;transform:translateX(-50%);background:rgba(255,210,63,.96);color:#14202e;border-radius:12px;padding:7px 14px;font-weight:800;font-size:16px;display:none;z-index:7;pointer-events:none}
   #tmsg.in{animation:dsin .3s ease-out}
   #quick{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);display:none;grid-template-columns:repeat(3,minmax(120px,1fr));gap:6px;background:rgba(20,32,46,.92);padding:10px;border-radius:14px;z-index:8;max-width:94vw}
@@ -104,7 +107,7 @@
   <div id="want"></div>
   <div id="teamInfo"></div>
   <div id="tping"></div>
-  <div id="tbtns"><button id="tbQuick">💬 Funk (T)</button><button id="tbPing" class="sec">📍 Markieren (Q)</button></div>
+  <div id="teamBtns"><button id="tbQuick">💬 Funk (T)</button><button id="tbPing" class="sec">📍 Markieren (Q)</button></div>
   <div id="clock">…</div>
   <h3>Spieler</h3>
   <div id="plist"></div>
@@ -334,7 +337,7 @@ const M={
   glass: new THREE.MeshLambertMaterial({color:0x9cc7dd,transparent:true,opacity:0.3,depthWrite:false}),
   steel: lam({color:0x2b2d30}), bronze: lam({color:0x6e5b3c}), step: lam({color:0xb9b6ae}), door: lam({color:0xd9b98a}), white: lam({color:0xf2f0ea})
 };
-const FM={fdesk:0xe4e4df,fchair:0xe9e3d7,fglas:0xa9c7d6,folive:0x8f8f52,fcer:0x3b3f45,fw:0xf1efea,fgrey:0x9a9da1,fdark:0x2e3136,fwood:0xd2a86a,fply:0xc9a777,fgreen:0x2f5d50,fblue:0x2f6fd0,fred:0xd0442f,fyel:0xe9b824,forange:0xe8742c,
+const FM={fcurt:0xe6dcc6,fdesk:0xe4e4df,fchair:0xe9e3d7,fglas:0xa9c7d6,folive:0x8f8f52,fcer:0x3b3f45,fw:0xf1efea,fgrey:0x9a9da1,fdark:0x2e3136,fwood:0xd2a86a,fply:0xc9a777,fgreen:0x2f5d50,fblue:0x2f6fd0,fred:0xd0442f,fyel:0xe9b824,forange:0xe8742c,
   metal:0x8d9399,sand:0xe2cf9c,net:0xfafafa,car0:0xb23a32,car1:0x2d5d9c,car2:0xd9dadc,car3:0x3a3f45,car4:0x7c8f6a,black:0x18191b,hold0:0xe63946,hold1:0xf4a261,hold2:0x2a9d8f,hold3:0x457b9d,hold4:0xe9c46a,hold5:0x8e5bd9};
 
 // geometry builder with world-space UVs so that textures keep their real size
@@ -556,9 +559,9 @@ function frame(f,r,s){   // room-local coordinates: u = distance from the front 
     fbox(mat,q[0],base+h0,q[1],q[2],base+h1,q[3]); if(col) mark(f,q[0],q[1],q[2],q[3]); return true; };
   return {D,Wd,put,raw,top:CE[f],f,r,s,pt:(u,v)=>{ const q=W2(u,v,u,v); return [q[0],q[1]]; },du:s===0?[0,1]:s===2?[0,-1]:s===3?[1,0]:[-1,0],dv:(s===0||s===2)?[1,0]:[0,1]};
 }
-function desk(F,u,v,w,mat,d){ d=d||0.6; if(!F.put(mat,u,v,u+d,v+w,0.70,0.74,1)) return false; F.raw('fdark',u+0.05,v+0.02,u+d-0.05,v+0.05,0,0.7); F.raw('fdark',u+0.05,v+w-0.05,u+d-0.05,v+w-0.02,0,0.7); return true; }
+function desk(F,u,v,w,mat,d){ d=d||0.6; if(mat==='fdesk'){ if(!F.put('_inv',u,v,u+d,v+w,0.70,0.74,1)) return false; trapDesk(F,u,v,w,d); return true; } if(!F.put(mat,u,v,u+d,v+w,0.70,0.74,1)) return false; F.raw('fdark',u+0.05,v+0.02,u+d-0.05,v+0.05,0,0.7); F.raw('fdark',u+0.05,v+w-0.05,u+d-0.05,v+w-0.02,0,0.7); return true; }
 function seat(F,u,v,dir,h){ const p=F.pt(u,v), a=dir===1?F.du:dir===2?[-F.dv[0],-F.dv[1]]:dir===3?F.dv:[-F.du[0],-F.du[1]]; SEATS.push({f:F.f,r:F.r,x:p[0],z:p[1],rot:Math.atan2(a[0],a[1]),h}); }
-function chair(F,u,v,dir){ if(!F.put('fchair',u,v,u+0.4,v+0.4,0.42,0.46,0)) return; seat(F,u+0.2,v+0.2,dir||0,0.46); F.raw('metal',u+0.15,v+0.15,u+0.25,v+0.25,0,0.42);
+function chair(F,u,v,dir){ if(!F.put('fchair',u,v,u+0.4,v+0.4,0.42,0.46,0)) return; if(!dir) F.raw('fchair',u+0.36,v+0.03,u+0.4,v+0.37,0.5,0.86); seat(F,u+0.2,v+0.2,dir||0,0.46); F.raw('metal',u+0.15,v+0.15,u+0.25,v+0.25,0,0.42);
   if(dir===1) F.raw('fdark',u,v,u+0.04,v+0.4,0.46,0.85); else if(dir===2) F.raw('fdark',u,v+0.36,u+0.4,v+0.4,0.46,0.85); else if(dir===3) F.raw('fdark',u,v,u+0.4,v+0.04,0.46,0.85); else F.raw('fdark',u+0.36,v,u+0.4,v+0.4,0.46,0.85); }
 function stool(F,u,v,dir){ if(F.put('fdark',u,v,u+0.34,v+0.34,0.5,0.55,0)){ F.raw('metal',u+0.13,v+0.13,u+0.21,v+0.21,0,0.5); seat(F,u+0.17,v+0.17,dir||0,0.55); } }
 function board(F){ // white boards across the whole front wall, interrupted only where a door is
@@ -568,7 +571,7 @@ function media(F){ for(const v of [F.Wd*0.3,F.Wd*0.7]){ if(F.D<6) continue; F.pu
 function tableSet(F,u,v){ if(!F.put('fwood',u,v,u+0.8,v+1.6,0.70,0.74,1)) return; F.raw('metal',u+0.35,v+0.1,u+0.45,v+0.2,0,0.7); F.raw('metal',u+0.35,v+1.4,u+0.45,v+1.5,0,0.7);
   for(const dv of [0.2,1.0]){ chair(F,u-0.5,v+dv,1); chair(F,u+0.9,v+dv,0); } }
 const GEN={
-  klasse(F,o){ o=o||{}; const c=F.Wd/2; board(F,o.fach);
+  klasse(F,o){ o=o||{}; const c=F.Wd/2; board(F,o.fach); curtains(F);
     if(o.fach){ if(F.put('fw',1.5,c-1.3,2.25,c+1.3,0,0.86,1)) F.raw('fgrey',1.48,c-1.32,2.27,c+1.32,0.86,0.9); } else desk(F,1.5,c-0.8,1.6,'fwood',0.7);
     const n=Math.max(1,Math.min(4,Math.floor((F.Wd-1.2)/2.2))), pitch=(F.Wd-1.0)/n;
     for(let u=3.4;u+1.3<F.D-1.1;u+=1.55) for(let k=0;k<n;k++){ const v=0.5+k*pitch+(pitch-1.3)/2; if(desk(F,u,v,1.3,o.fach?'fw':'fdesk')){ chair(F,u+0.72,v+0.12,0); chair(F,u+0.72,v+0.78,0); } }
@@ -695,11 +698,11 @@ for(let fi=0;fi<NF;fi++) for(const l of WD.floors[fi].labels){
   // urinals for boys and men
   let nu=nuP; if(male&&!nu) for(let s=0;s<4&&!nu;s++){ const r=row(s,0.6,0.4,0.9,4,true); for(const c of r){ const sd=c.sd, u=c.u+0.3, o=c.off; B('fw',R(sd,u-0.18,u+0.18,o,o+0.32),0.5,1.15); B('fgrey',R(sd,u+0.29,u+0.31,o,o+0.45),0.6,1.5); } nu=r.length; }
   // wash basins with mirrors
-  let ns=nsP; for(let s=0;s<4&&ns<(nt>2?2:1);s++){ const r=row(s,0.7,0.5,0.8,3,true); for(const c of r){ const sd=c.sd, u=c.u+0.35, o=c.off; B('fw',R(sd,u-0.28,u+0.28,o,o+0.46),0.72,0.86); B('metal',R(sd,u-0.02,u+0.02,o+0.02,o+0.14),0.86,1.02); B('fglas',R(sd,u-0.3,u+0.3,o,o+0.02),1.1,1.75); } ns=r.length; }
+  let ns=nsP; for(let s=0;s<4&&ns<(nt>2?2:1);s++){ const r=row(s,0.7,0.5,0.8,3,true); if(r.length){ const sd=r[0].sd, o=r[0].off, us=r.map(c=>c.u+0.35), a=Math.min(...us)-0.33, b=Math.max(...us)+0.33; B('fw',R(sd,a,b,o,o+0.46),0.72,0.86); B('fw',R(sd,a,b,o+0.42,o+0.47),0.86,0.92); for(const u of us) B('metal',R(sd,u-0.02,u+0.02,o+0.02,o+0.14),0.86,1.02); B('fglas',R(sd,a,b,o,o+0.02),1.1,1.85); B('fdark',R(sd,b+0.1,b+0.4,o,o+0.2),0.95,1.62); } ns=r.length; }
   if(!ns) for(const [ai,fd] of [[0.6,0.6],[0.5,0.4]]) for(let s=0;s<4&&!ns;s++){ const r=row(s,0.65,0.45,ai,2,false).filter(c=>farDoor(c.r,fd)); for(const c of r){ take(c.r); const sd=c.sd, u=c.u+0.325, o=c.off; B('fw',R(sd,u-0.27,u+0.27,o,o+0.44),0.72,0.86); B('metal',R(sd,u-0.02,u+0.02,o+0.02,o+0.14),0.86,1.02); B('fglas',R(sd,u-0.29,u+0.29,o,o+0.02),1.1,1.75); } ns=r.length; }
   if(cub.length||info) WCN++; WCLOG.push([FN[fi],l[4],info||'kein WC',nu?nu+' Urinale':'',ns+' Waschbecken',A.cells.size]); }
 
-for(const q of PART){ const y=LV[q.fi]; fbox('fgrey',q.x0*C,y+0.12,q.y0*C,(q.x1+1)*C,y+2.02,(q.y1+1)*C); fbox('metal',q.x0*C+0.02,y,q.y0*C+0.02,Math.min((q.x1+1)*C,q.x0*C+0.06),y+0.12,Math.min((q.y1+1)*C,q.y0*C+0.06)); }
+for(const q of PART){ const y=LV[q.fi]; fbox('fw',q.x0*C,y+0.12,q.y0*C,(q.x1+1)*C,y+2.02,(q.y1+1)*C); fbox('metal',q.x0*C+0.02,y,q.y0*C+0.02,Math.min((q.x1+1)*C,q.x0*C+0.06),y+0.12,Math.min((q.y1+1)*C,q.y0*C+0.06)); }
 // ---------------------------------------------------------------- service and plant rooms: only for teachers
 const RESTRICT=/^(EDV \/ ELT|EDV-Nebenraum|Technik|Lüftung|Heizung|Hausanschluss|HVT|NSHV|Zentralbatterie|USV|ELT|BMZ|Reinigung|Lager|Abstellraum|Konfiskat|Spülküche|Winterdienst|Hausmeister-Werkstatt|Archiv|Küche Warmwasser|Pausenverkauf Lager|Lehrer \d)/;
 const LOCKS=[], LOCKSKIP=[];
@@ -722,7 +725,7 @@ for(let fi=0;fi<NF;fi++) for(const s of WD.floors[fi].stars){ if(!RESTR[fi][s[1]
   while(q.length){ const i=q.shift(); if(!RESTR[fi][i]&&!grid[fi][i]&&(fi!==G||inside[fi][i])){ s[0]=i%GW; s[1]=(i-s[0])/GW; break; } for(const j of [i-1,i+1,i-GW,i+GW]) if(j>=0&&j<GW*GH&&!seen.has(j)&&seen.size<40000){ seen.add(j); q.push(j); } } }
 
 const RULES=[[/Werken/,GEN.werk],[/Fachraum/,(F)=>GEN.klasse(F,{fach:true})],[/Übung/,GEN.labor],[/(Chemie|Physik|Biologie) Sammlung/,GEN.sammlung],[/Sammlung|Lehrmittel|Archiv|^Lager|Stuhllager/,GEN.regale],[/Vorbereitung/,GEN.buero],[/Nebenraum/,GEN.regale],
-  [/Klassenzimmer|Kursraum|Ausweichraum|Mehrzweck|Differenzierung|Kunstsaal/,(F)=>GEN.klasse(F)],[/Musikraum/,GEN.musik],[/EDV-Raum/,GEN.edv],[/Bibliothek/,GEN.bib],[/Silentium|Ganztag|Aufenthalt|Kommunikation|Besprechung|Elternsprech|Teeküche|Jugend/,GEN.treff],
+  [/Differenzierung/,diffZone],[/Klassenzimmer|Kursraum|Ausweichraum|Mehrzweck|Kunstsaal/,(F)=>GEN.klasse(F)],[/Musikraum/,GEN.musik],[/EDV-Raum/,GEN.edv],[/Bibliothek/,GEN.bib],[/Silentium|Ganztag|Aufenthalt|Kommunikation|Besprechung|Elternsprech|Teeküche|Jugend/,GEN.treff],
   [/Schülercafé|Speisesaal|Mensa/,(F)=>GEN.cafe(F)],[/Pausenverkauf|Speisenausgabe/,(F)=>GEN.cafe(F,{counter:true})],[/Aula/,GEN.aula],[/Garderobe/,GEN.garderobe],[/Foyer|Vorraum/,GEN.foyer],
   [/Sekretariat|Schulleitung|koordination|Beratung|Schulpsych|Büro|Hausmeister|Winterdienst|Medientechnik/,GEN.buero],[/Umkleide/,GEN.umkleide],[/Technik|Lüftung|Heizung/,GEN.technik],[/Erste-Hilfe/,GEN.liege]];
 WD.floors.forEach((f,i)=>{ for(const r of f.rooms){ const t=r[0]; if(/Turnhalle|Tiefgarage|Kletter/.test(t)) continue; const big=/Aula|Foyer|Bibliothek|Schülercafé|Speise|Ganztag|Vorraum/.test(t); if(r[5]<(big?0.45:0.7)) continue;
@@ -829,7 +832,7 @@ function block(x0,z0,x1,z1){ if(x1>0&&z1>0&&x0<WORLD_W&&z0<WORLD_H) mark(G,Math.
   for(const p of [[76,88],[104,88],[132,88],[150,96],[84,104],[120,106]]) bench(p[0],p[1],true);
   for(const p of [[sp[0]-6,sp[1]-7],[36,44],[52,38.6],[96,38.6],[128,38.6],[80,87],[110,87],[140,86.5],[155,60],[157.5,30.5],[121.5,16],[187.6,22.3],[187.6,56],[187.6,100.6],[-2,43.5],[-1,94]]) bin(p[0],p[1]);
 }
-for(const k in FB) FB[k].mesh(lam({color:FM[k]}));
+for(const k in FB) if(k[0]!=='_') FB[k].mesh(lam({color:FM[k]}));
 
 // trees (blocking) + clouds
 {
@@ -1909,7 +1912,11 @@ function wantTick(dt,running){ if(immune()){ if(WANT.s){ WANT.s=0; WANT.call=fal
   if(WANT.s>=3){ WANT.calm+=dt; if(WANT.calm>150){ WANT.s=2; WANT.call=false; WANT.calm=0; wantHud(); toast('⭐⭐ Die Aufsicht beruhigt sich langsam … (Sekretariat wäre schneller gewesen.)',2600); } } }
 let runWarn=0;
 // ---------------------------------------------------------------- per frame
-function plusTick(dt){ if(!PLUS_OK) return; DEL.f=me.f; DEL.x=me.x; DEL.z=me.z; DEL.y=me.y; const running=(keys.ShiftLeft||keys.ShiftRight||runToggle)&&me.moving&&!modal();
+// touch: jump on finger down (no click delay), hold = keep hopping; run toggle on finger down
+const JH={on:false};
+(function(){ const j=$('btnJump'), r=$('btnRun'); j.addEventListener('touchstart',e=>{ e.preventDefault(); JH.on=true; jump(); },{passive:false}); const off=e=>{ e.preventDefault(); JH.on=false; }; j.addEventListener('touchend',off,{passive:false}); j.addEventListener('touchcancel',off,{passive:false});
+  r.addEventListener('touchstart',e=>{ e.preventDefault(); runToggle=!runToggle; r.textContent=runToggle?'Gehen':'Rennen'; r.classList.toggle('on',runToggle); },{passive:false}); })();
+function plusTick(dt){ if(!PLUS_OK) return; if(JH.on&&me.jy===0) jump(); DEL.f=me.f; DEL.x=me.x; DEL.z=me.z; DEL.y=me.y; const running=(keys.ShiftLeft||keys.ShiftRight||runToggle)&&me.moving&&!modal();
   if(running&&runBlocked()&&performance.now()-runWarn>5000){ runWarn=performance.now(); toast('⭐⭐⭐ Rennen ist gesperrt, bis du dich im Sekretariat meldest.',2200); }
   naviTick(dt); dsTick(dt); wantTick(dt,running&&!runBlocked()); p2Tick(dt); if(TEAM_OK) teamTick(dt); if(WX_OK) wxTick(dt); }
 function plusMenu(box){ if(!PLUS_OK) return; const row=(t,d,b,fn)=>{ const r=document.createElement('div'); r.className='m'; const l=document.createElement('div'), x=document.createElement('b'), s=document.createElement('small'); x.textContent=t; s.textContent=d; l.append(x,s); const bt=document.createElement('button'); bt.textContent=b; bt.addEventListener('click',fn); r.append(l,bt); box.append(r); };
@@ -2108,7 +2115,7 @@ function botTick(dt){ const b=TEAM.bot, t=TEAM.task; if(!t||t.done) return;
   b.last=1; }
 
 // ---------------------------------------------------------------- UI
-function teamHud(){ const e=$('teamInfo'); if(!TEAM_OK) return; if(!hasTeam()&&!TEAM.lf){ e.style.display='none'; $('tbtns').style.display='none'; return; } e.style.display='block'; $('tbtns').style.display=hasTeam()?'flex':'none';
+function teamHud(){ const e=$('teamInfo'); if(!TEAM_OK) return; if(!hasTeam()&&!TEAM.lf){ e.style.display='none'; $('teamBtns').style.display='none'; return; } e.style.display='block'; $('teamBtns').style.display=hasTeam()?'flex':'none';
   const t=TEAM.task; e.textContent=TEAM.lf&&!hasTeam()?'🔎 Suche Partner …':'👥 Team mit '+pName()+(t?(t.kind===1?(t.lotse?' · Lotse → '+t.r.nm:' · Blindflug'):' · Doppelschloss'):''); }
 function quickOpen(){ if(!hasTeam()){ teamMenu(); return; } const q=$('quick'); q.style.display=q.style.display==='grid'?'none':'grid'; }
 (function(){ const q=$('quick'); QMSG.forEach((m,i)=>{ if(!i) return; const b=document.createElement('button'); b.textContent=(i<=9?i+' ':'')+m; b.addEventListener('click',()=>{ qSend(i); q.style.display='none'; }); q.append(b); });
@@ -2164,6 +2171,97 @@ if(WX.src!=='live'&&WX.src!=='aus'&&WXK[WX.src]) wxSet(WX.src); else wxHud();
 wxFetch(); setInterval(()=>{ if(WX.src==='live') wxFetch(); },600000);
 WX_OK=true;
 PLUS.WX=WX; PLUS.wxSet=wxSet; PLUS.wxFetch=wxFetch; PLUS.wxUrl=wxUrl;
+
+// ================================================================ update „wie im echten Neubau“ (Fotos vom 26.11.2026)
+// Treppenhaus-Ziffern an den Türen, Stahlwand + Holzhandlauf in den Treppenläufen, Sitznischen in den Differenzierungszonen,
+// Terrazzo + Akustiklamellen in Halle/Mensa, Fächerwand in der Garderobe, Trapeztische (Teile davon laufen schon beim Möblieren).
+var TRAP; // trapezoid table tops, collected while furnishing the classrooms
+function trapDesk(F,u,v,w,d){ const h=w/2, base=LV[F.f]; (TRAP||(TRAP=[]));
+  for(let k=0;k<2;k++){ const v0=v+k*h+0.01, v1=v+(k+1)*h-0.01, P=[F.pt(u,v0+0.13),F.pt(u,v1-0.13),F.pt(u+d,v1),F.pt(u+d,v0)]; TRAP.push({P,y0:base+0.71,y1:base+0.74});
+    for(const [a,b] of [[u+0.03,v0+0.16],[u+0.03,v1-0.2],[u+d-0.07,v0+0.03],[u+d-0.07,v1-0.07]]) F.raw('fdark',a,b,a+0.04,b+0.04,0,0.71); } }
+function curtains(F){ const r=F.r, g=r[6]; if(g<0) return; const base=LV[F.f], top=base+(CE[F.f]||3)-0.12, x0=r[1]*C, x1=r[3]*C, z0=r[2]*C, z1=r[4]*C;
+  const along=(g===0||g===2), a0=along?x0:z0, a1=along?x1:z1, L=a1-a0; if(L<2) return; const n=Math.max(2,Math.round(L/2.4)+1);
+  for(let k=0;k<n;k++){ const c=a0+0.35+(L-0.7)*k/(n-1); const p0=c-0.24, p1=c+0.24;
+    if(g===0) fbox('fcurt',p0,base+0.12,z0+0.07,p1,top,z0+0.2); else if(g===2) fbox('fcurt',p0,base+0.12,z1-0.2,p1,top,z1-0.07);
+    else if(g===1) fbox('fcurt',x1-0.2,base+0.12,p0,x1-0.07,top,p1); else fbox('fcurt',x0+0.07,base+0.12,p0,x0+0.2,top,p1); } }
+// Differenzierungszone: wooden wall with seat niches and shelves at the back, a few high tables
+function diffZone(F){ const D=F.D, Wd=F.Wd; if(Wd<3.5||D<3) { GEN.klasse(F); return; }
+  const u0=D-0.62, H=2.45; let v=0.4; const end=Wd-0.4; let k=0;
+  while(v+1.7<end){ const w=k%3===2?1.0:1.5;   // niche (seat) or shelf
+    if(!F.put('fply',u0,v,D-0.02,v+0.14,0,H,1)) { v+=0.5; continue; }
+    if(k%3===2){ F.put('fply',u0,v+0.14,D-0.02,v+0.14+w,0,0.5,1); for(const y of [0.95,1.4]) F.raw('fply',u0+0.04,v+0.14,D-0.06,v+0.14+w,y,y+0.03); }
+    else { F.put('fply',u0,v+0.14,D-0.02,v+0.14+w,0,0.45,1); seat(F,u0+0.28,v+0.14+w/2,0,0.45); }
+    F.raw('fwood',D-0.08,v+0.14,D-0.02,v+0.14+w,0.45,1.75); F.raw('fply',u0,v+0.14,D-0.02,v+0.14+w,1.75,H);
+    v+=0.14+w; k++; }
+  F.put('fply',u0,v,D-0.02,Math.min(end,v+0.14),0,H,1);
+  for(let i=0;i<2;i++){ const vv=Wd*(0.3+0.4*i)-0.35, uu=D*0.4; if(F.put('fdesk',uu,vv,uu+0.7,vv+0.7,1.02,1.06,1)){ F.raw('fdark',uu+0.33,vv+0.33,uu+0.37,vv+0.37,0,1.02); } } }
+
+var DECO_OK=false;
+(function(){
+  // ---- trapezoid tops
+  if(TRAP&&TRAP.length){ const P=[]; const tri=(a,b,c)=>P.push(a[0],a[1],a[2],b[0],b[1],b[2],c[0],c[1],c[2]);
+    for(const t of TRAP){ const T=t.P.map(p=>[p[0],t.y1,p[1]]), B=t.P.map(p=>[p[0],t.y0,p[1]]); tri(T[0],T[1],T[2]); tri(T[0],T[2],T[3]); tri(B[0],B[2],B[1]); tri(B[0],B[3],B[2]); for(let i=0;i<4;i++){ const j=(i+1)%4; tri(B[i],B[j],T[j]); tri(B[i],T[j],T[i]); } }
+    const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(P,3)); g.computeVertexNormals(); const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({color:0xe4e4df,side:THREE.DoubleSide})); scene.add(m); }
+  // ---- textures
+  const steelT=tex(256,256,(g,w,h)=>{ g.fillStyle='#9aa1a6'; g.fillRect(0,0,w,h); noise(g,w,h,['#b8bec2','#868d92','#a9b0b4'],900,0.5); g.strokeStyle='#6f767b'; g.lineWidth=3; g.strokeRect(2,2,w-4,h-4); g.fillStyle='#5f666b'; for(let i=0;i<8;i++){ for(const [x,y] of [[10+i*30,10],[10+i*30,h-10],[10,10+i*30],[w-10,10+i*30]]){ g.beginPath(); g.arc(x,y,2.2,0,7); g.fill(); } } });
+  const terrT=tex(256,256,(g,w,h)=>{ g.fillStyle='#8d9196'; g.fillRect(0,0,w,h); noise(g,w,h,['#c9c7c0','#5d6166','#a49a8c','#e4e1da','#3f4347'],5200,0.85); },1,1);
+  // ---- stairwell numbers on the corridor side of every door into Treppenraum I/II/III
+  const digitT={}; const digit=n=>digitT[n]||(digitT[n]=(()=>{ const cv=document.createElement('canvas'); cv.width=128; cv.height=200; const g=cv.getContext('2d'); g.font='900 190px system-ui,sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.lineWidth=7; g.strokeStyle='#15171a'; g.strokeText(String(n),64,104); const t=new THREE.CanvasTexture(cv); return t; })());
+  const roman={'I':1,'II':2,'III':3}; let nDig=0; const DIG=[];
+  WD.floors.forEach((F,fi)=>{ for(const l of F.labels){ const nm=dispOf(l)||''; const m=/Treppenraum (III|II|I)\b/.exec(nm); if(!m) continue; let num=roman[m[1]]; const x=l[1]*C; if(x>105) num=3; else if(x>60) num=2; else if(x<25) num=1;   // the plan stamps TR III as „II“ on some floors
+      const A=roomCells(fi,l[1],l[2],12000); if(!A) continue;
+      for(const d of F.doors){ const hx=d[0],hy=d[1],cx=d[2],cy=d[3], len=Math.hypot(cx-hx,cy-hy); if(len*C<0.75) continue; const ux=(cx-hx)/len, uy=(cy-hy)/len, nx=-uy, ny=ux, mx=(hx+cx)/2, my=(hy+cy)/2;
+        const inA=(s)=>{ const x=Math.round(mx+nx*s), y=Math.round(my+ny*s); return A.cells.has(y*GW+x); }; const a=inA(4)||inA(6), b=inA(-4)||inA(-6); if(a===b) continue;
+        const sgn=a?-1:1;   // corridor side
+        const mat=new THREE.MeshBasicMaterial({map:digit(num),transparent:true,depthWrite:false,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2}); const pl=new THREE.Mesh(new THREE.PlaneGeometry(0.62,0.97),mat);
+        const wx=(mx+ux*(len*0.5+3.2)+nx*sgn*1.35)*C, wz=(my+uy*(len*0.5+3.2)+ny*sgn*1.35)*C;   // on the wall right next to the opening
+        pl.position.set(wx,LV[fi]+1.3,wz); pl.rotation.y=Math.atan2(nx*sgn,ny*sgn); floorGroups[fi].add(pl); nDig++; DIG.push({f:fi,x:wx,z:wz,nx:nx*sgn,nz:ny*sgn,num});
+        const pl2=pl.clone(); pl2.scale.setScalar(0.55); pl2.position.set(mx*C+nx*sgn*0.105,LV[fi]+2.45,my*C+ny*sgn*0.105); floorGroups[fi].add(pl2); } } });
+  // ---- steel-clad wall and wooden handrail along every long flight
+  const sb=[], hb=new GB(); const steelM=lam({map:steelT}); steelT.wrapS=steelT.wrapT=THREE.RepeatWrapping;
+  const sP=[], sU=[]; const quad=(a,b,c,d,ua,ub)=>{ sP.push(...a,...b,...c,...a,...c,...d); sU.push(ua[0],ua[1],ub[0],ua[1],ub[0],ub[1],ua[0],ua[1],ub[0],ub[1],ua[0],ub[1]); };
+  for(const s of STAIRS){ const base=LV[s.f]; for(const g of s.segs){ if(!g.dir||g.solid||g.cover) continue; const alongX=g.dir<=2, len=alongX?g.x1-g.x0:g.z1-g.z0; if(len<2.2) continue;
+      const lowA=(g.dir===1||g.dir===3);   // the flight rises towards x1/z1
+      const yA=base+(lowA?g.h0:g.h1), yB=base+(lowA?g.h1:g.h0);
+      if(alongX){ const z=g.z0+0.015, zr=g.z1-0.07; quad([g.x0,yA-0.25,z],[g.x1,yB-0.25,z],[g.x1,yB+2.7,z],[g.x0,yA+2.7,z],[0,0],[len/1.25,2.95/1.25]);
+        const L=Math.hypot(len,yB-yA), m=new THREE.Mesh(new THREE.BoxGeometry(L,0.05,0.06),lam({color:0xd8b47e})); m.position.set((g.x0+g.x1)/2,(yA+yB)/2+0.92,zr); m.rotation.z=Math.atan2(yB-yA,len); sb.push(m); }
+      else { const x=g.x0+0.015, xr=g.x1-0.07; quad([x,yA-0.25,g.z0],[x,yB-0.25,g.z1],[x,yB+2.7,g.z1],[x,yA+2.7,g.z0],[0,0],[len/1.25,2.95/1.25]);
+        const L=Math.hypot(len,yB-yA), m=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.05,L),lam({color:0xd8b47e})); m.position.set(xr,(yA+yB)/2+0.92,(g.z0+g.z1)/2); m.rotation.x=-Math.atan2(yB-yA,len); sb.push(m); } } }
+  if(sP.length){ const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(sP,3)); g.setAttribute('uv',new THREE.Float32BufferAttribute(sU,2)); g.computeVertexNormals(); const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({map:steelT,side:THREE.DoubleSide})); scene.add(m); }
+  if(sb.length){ const all=[]; for(const m of sb){ m.updateMatrix(); const gg=m.geometry.clone().toNonIndexed(); gg.applyMatrix4(m.matrix); all.push(gg.attributes.position.array); } const n=all.reduce((s,a)=>s+a.length,0), P=new Float32Array(n); let o=0; for(const a of all){ P.set(a,o); o+=a.length; } const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(P,3)); g.computeVertexNormals(); scene.add(new THREE.Mesh(g,lam({color:0xd8b47e}))); }
+  // ---- terrazzo floor, acoustic baffles, cubby wall
+  const tP=[], tU=[], bf=new GB(), cub=new GB(), cubIn=new GB();
+  WD.floors.forEach((F,fi)=>{ if(fi!==G) return; for(const l of F.labels){ const nm=dispOf(l)||''; if(!/Aula|Pausenhalle|Ganztag|Schülercafé|Küchen-Ausgabe|Garderobe|Treppenhalle/.test(nm)) continue; if(l.closed) continue; const x=cw(l[1]), z=cw(l[2]); if(inZone(fi,x,z)) continue;
+      const A=roomCells(fi,l[1],l[2],60000); if(!A) continue; const y=LV[fi]+0.012;
+      for(let cy=A.y0;cy<=A.y1;cy++){ let run=-1; for(let cx=A.x0;cx<=A.x1+1;cx++){ const on=cx<=A.x1&&A.cells.has(cy*GW+cx); if(on&&run<0) run=cx; if(!on&&run>=0){ const xa=run*C, xb=cx*C, za=cy*C, zb=(cy+1)*C; tP.push(xa,y,za, xb,y,zb, xb,y,za, xa,y,za, xa,y,zb, xb,y,zb); tU.push(xa/3,za/3,xb/3,zb/3,xb/3,za/3, xa/3,za/3,xa/3,zb/3,xb/3,zb/3); run=-1; } } }
+      if(/Garderobe|Treppenhalle/.test(nm)) {} else { const by=LV[fi]+Math.min(3.35,(CE[fi]||3.7)-0.35), w=(A.x1-A.x0)*C, d=(A.y1-A.y0)*C, alongX=w>=d;
+        for(let k=0;k<200;k++){ const t=0.9+k*0.55; if(t>(alongX?d:w)-0.6) break; const off=(k%3)*0.18;
+          if(alongX){ const zz=A.y0*C+t; let a=-1; for(let cx=A.x0;cx<=A.x1+1;cx++){ const on=cx<=A.x1&&A.cells.has(Math.floor(zz/C)*GW+cx); if(on&&a<0) a=cx; if(!on&&a>=0){ if((cx-a)*C>1.2) bf.box(a*C+0.3,by-off-0.28,zz,cx*C-0.3,by-off,zz+0.07,1,false); a=-1; } } }
+          else { const xx=A.x0*C+t; let a=-1; for(let cy=A.y0;cy<=A.y1+1;cy++){ const on=cy<=A.y1&&A.cells.has(cy*GW+Math.floor(xx/C)); if(on&&a<0) a=cy; if(!on&&a>=0){ if((cy-a)*C>1.2) bf.box(xx,by-off-0.28,a*C+0.3,xx+0.07,by-off,cy*C-0.3,1,false); a=-1; } } } } }
+      if(/Garderobe/.test(nm)){ // cubby wall along the longest free wall run
+        let best=null; for(let cy=A.y0;cy<=A.y1;cy++){ let run=-1; for(let cx=A.x0;cx<=A.x1+1;cx++){ const on=cx<=A.x1&&A.cells.has(cy*GW+cx)&&!A.cells.has((cy-1)*GW+cx); if(on&&run<0) run=cx; if(!on&&run>=0){ if(!best||cx-run>best.n) best={n:cx-run,x0:run,y:cy}; run=-1; } } }
+        if(best&&best.n*C>3){ const xa=best.x0*C+0.4, xb=xa+Math.min(9,best.n*C-0.8), z0=best.y*C+0.02, z1=z0+0.42, y0=LV[fi]; cub.box(xa,y0,z0,xb,y0+2.0,z0+0.03,1,false); const nx=Math.floor((xb-xa)/0.36);
+          for(let i=0;i<=nx;i++) cub.box(xa+i*(xb-xa)/nx-0.012,y0,z0,xa+i*(xb-xa)/nx+0.012,y0+2.0,z1,1,false); for(let j=0;j<=4;j++) cub.box(xa,y0+j*0.5-0.012,z0,xb,y0+j*0.5+0.012,z1,1,false); mark(fi,xa,z0,xb,z1); } } } });
+  // ---- Differenzierungszonen: wooden wall with seat niches and shelves at the nearest long wall
+  const nw=new GB(), nl=new GB(); let nNis=0;
+  WD.floors.forEach((F,fi)=>{ const gr=grid[fi]; const blk=(x,y)=>x<0||y<0||x>=GW||y>=GH||gr[y*GW+x]; for(const l of F.labels){ const nm=dispOf(l)||''; if(!/Differenzierung/.test(nm)) continue; const cx=Math.round(l[1]), cy=Math.round(l[2]); if(inZone(fi,cw(cx),cw(cy))) continue;
+      let best=null; for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){ let k=1; while(k<56&&!blk(cx+dx*k,cy+dy*k)) k++; if(k>=56) continue; const px=-dy, py=dx; let t0=0,t1=0; const ok=t=>blk(cx+dx*k+px*t,cy+dy*k+py*t)&&!blk(cx+dx*(k-1)+px*t,cy+dy*(k-1)+py*t)&&!blk(cx+dx*(k-6)+px*t,cy+dy*(k-6)+py*t);
+        if(!ok(0)) continue; while(t0>-60&&ok(t0-1)) t0--; while(t1<60&&ok(t1+1)) t1++; const run=t1-t0+1; if(run<30) continue; const sc=run-k*0.5; if(!best||sc>best.sc) best={sc,dx,dy,k,px,py,t0,t1}; }
+      if(!best) continue; const {dx,dy,k,px,py,t0,t1}=best, base=LV[fi], H=Math.min(2.45,(CE[fi]||3)-0.3);
+      const fx=(cx+dx*k+(dx<0?1:0))*C, fy=(cy+dy*k+(dy<0?1:0))*C;   // wall face on the label side (world, along the ray)
+      const mid=((t0+t1)/2), L=Math.min(6.4,(t1-t0)*C-0.5), ux=px, uy=py, inX=-dx, inY=-dy;
+      const B=(gb,u0,u1,d0,d1,y0,y1,col)=>{ const ax=fx*(dx?1:0)+(dx?0:(cx+0.5+mid*ux)*C), ay=fy*(dy?1:0)+(dy?0:(cy+0.5+mid*uy)*C);
+        const xs=[ax+ux*u0+inX*d0, ax+ux*u1+inX*d1], zs=[ay+uy*u0+inY*d0, ay+uy*u1+inY*d1]; const x0=Math.min(...xs),x1=Math.max(...xs),z0=Math.min(...zs),z1=Math.max(...zs); gb.box(x0,base+y0,z0,x1,base+y1,z1,1,false); if(col) mark(fi,x0,z0,x1,z1); return [(x0+x1)/2,(z0+z1)/2]; };
+      let u=-L/2, k2=0; while(u+1.2<L/2){ B(nw,u,u+0.14,0,0.6,0,H,1); u+=0.14; const w=Math.min(k2%3===2?1.0:1.5,L/2-u-0.14); if(w<0.7) break;
+        if(k2%3===2){ B(nw,u,u+w,0,0.6,0,0.5,1); B(nl,u,u+w,0,0.56,0.98,1.01); B(nl,u,u+w,0,0.56,1.42,1.45); }
+        else { const c=B(nw,u,u+w,0,0.6,0,0.45,1); SEATS.push({f:fi,r:null,x:c[0]+inX*0.02,z:c[1]+inY*0.02,rot:Math.atan2(inX,inY),h:0.45}); nNis++; }
+        B(nl,u,u+w,0,0.05,0.45,1.75); B(nw,u,u+w,0,0.6,1.75,H); u+=w; k2++; }
+      B(nw,u,u+0.14,0,0.6,0,H,1); } });
+  nw.mesh(lam({color:0xd2b083})); nl.mesh(lam({color:0xe8cfa2}));
+  if(tP.length){ const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(tP,3)); g.setAttribute('uv',new THREE.Float32BufferAttribute(tU,2)); g.computeVertexNormals(); const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({map:terrT,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-2})); scene.add(m); }
+  bf.mesh(lam({color:0xf3f3f0})); cub.mesh(lam({color:0xd9bd8c}));
+  DECO_OK=true; PLUS.DECO={DIG,nDig,nNis,trap:TRAP?TRAP.length:0,steel:sP.length/18,terr:tP.length/18};
+})();
 
 // ================================================================ main loop
 let last=performance.now(), sendAcc=0, uiAcc=0, lastF=-1;

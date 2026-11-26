@@ -104,3 +104,12 @@ Bitte die Klasse anweisen, Fantasienamen zu verwenden. Vor dem Einsatz mit Schü
 - Menü → „Wetter“: Live oder selbst wählen, außerdem „Aus“ für schwache Geräte. Die Wahl gilt nur für das eigene Gerät.
 - Ohne Spielserver (z. B. auf der Claude-Seite) gibt es kein Live-Wetter, nur das selbst gewählte.
 - Möbel wie im Neubau: helle Tische mit schwarzen Beinen, weiße Stühle.
+
+## Wie im echten Neubau, Handy-Steuerung (26.11.2026)
+
+- Treppenhäuser: große Ziffern 1/2/3 neben und über den Türen zu Treppenraum I/II/III, Stahlwand und Holzhandlauf an jedem Treppenlauf.
+- Differenzierungszonen: Holzwand mit Sitznischen und Regalfächern (Figuren setzen sich hinein).
+- Aula/Pausenhalle, Schülercafé, Ganztag, Mensa-Ausgabe, Treppenhalle: Terrazzoboden; weiße Akustiklamellen unter der Decke; Fächerwand in der Garderobe.
+- WCs: lange weiße Rinnenwaschbecken mit durchgehendem Spiegel und Händetrockner, weiße Kabinen.
+- Klassenzimmer: Trapeztische, weiße Stühle mit Lehne, Vorhänge an der Fensterseite.
+- Handy: Die Knöpfe „Sprung“ und „Rennen“ sind wieder da (sie waren durch einen Namenskonflikt versteckt). Sprung reagiert sofort beim Antippen; gedrückt halten = immer weiter springen, auch beim Rennen. Im Querformat sitzen die Knöpfe unten rechts neben der Minikarte.

@@ -32,7 +32,7 @@ const server = http.createServer((req, res) => {
   } else if (url === '/favicon.ico') {
     res.writeHead(204); res.end();
   } else if (url === '/weather') {
-    getWeather(w => { res.writeHead(w ? 200 : 503, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'max-age=300' }); res.end(JSON.stringify(w || {})); });
+    getWeather(w => { res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'max-age=300' }); res.end(JSON.stringify(w || {})); });
   } else if (url === '/healthz') {
     res.writeHead(200, { 'Content-Type': 'text/plain' }); res.end('ok');
   } else { res.writeHead(404); res.end('Not found'); }
