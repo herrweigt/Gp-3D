@@ -14,14 +14,27 @@ const html = fs.readFileSync(path.join(__dirname, 'index.html'));
 // Live-Wetter für Putzbrunn (Open-Meteo, ohne Schlüssel). Alle 10 Minuten neu, für alle Spieler gemeinsam –
 // die Geräte der Schüler fragen nur diesen Server, nicht den Wetterdienst.
 const https = require('https');
-let wxCache = null, wxTime = 0;
+let wxCache = null, wxTime = 0, wxErr = '';
+function getJSON(url, cb) {   // IPv4 erzwingen (Render: ausgehendes IPv6 oft nicht verfügbar)
+  const req = https.get(url, { family: 4, headers: { 'User-Agent': 'gp-3d-schulspiel', 'Accept': 'application/json' } }, r => {
+    let b = ''; r.on('data', d => b += d);
+    r.on('end', () => { if (r.statusCode !== 200) return cb(new Error('HTTP ' + r.statusCode)); try { cb(null, JSON.parse(b)); } catch (e) { cb(e); } });
+  });
+  req.on('error', e => cb(e)); req.setTimeout(8000, () => req.destroy(new Error('Timeout')));
+}
+// Bright Sky (Daten des Deutschen Wetterdienstes): Symbol -> WMO-ähnlicher Code
+const BSKY = { 'clear-day': 0, 'clear-night': 0, 'partly-cloudy-day': 2, 'partly-cloudy-night': 2, cloudy: 3, fog: 45, wind: 3, rain: 61, sleet: 66, snow: 71, hail: 96, thunderstorm: 95 };
 function getWeather(cb) {
   if (process.env.WX_MOCK) return cb(JSON.parse(process.env.WX_MOCK));
   if (wxCache && Date.now() - wxTime < 600000) return cb(wxCache);
-  https.get('https://api.open-meteo.com/v1/forecast?latitude=48.0753&longitude=11.7181&current=temperature_2m,weather_code,cloud_cover,wind_speed_10m,is_day&timezone=Europe%2FBerlin', r => {
-    let b = ''; r.on('data', d => b += d);
-    r.on('end', () => { try { const c = JSON.parse(b).current; wxCache = { temp: c.temperature_2m, code: c.weather_code, cloud: c.cloud_cover, wind: c.wind_speed_10m, day: c.is_day, time: c.time }; wxTime = Date.now(); } catch (e) {} cb(wxCache); });
-  }).on('error', () => cb(wxCache)).setTimeout(8000, function () { this.destroy(); });
+  getJSON('https://api.open-meteo.com/v1/forecast?latitude=48.0753&longitude=11.7181&current=temperature_2m,weather_code,cloud_cover,wind_speed_10m,is_day&timezone=Europe%2FBerlin', (e, d) => {
+    if (!e && d && d.current) { const c = d.current; wxCache = { temp: c.temperature_2m, code: c.weather_code, cloud: c.cloud_cover, wind: c.wind_speed_10m, day: c.is_day, time: c.time, src: 'open-meteo' }; wxTime = Date.now(); wxErr = ''; return cb(wxCache); }
+    const e1 = e ? e.message : 'keine Daten';
+    getJSON('https://api.brightsky.dev/current_weather?lat=48.0753&lon=11.7181', (e2, d2) => {
+      if (!e2 && d2 && d2.weather) { const w = d2.weather; wxCache = { temp: w.temperature, code: BSKY[w.icon] !== undefined ? BSKY[w.icon] : 3, cloud: w.cloud_cover, wind: w.wind_speed_10, time: w.timestamp, src: 'brightsky' }; wxTime = Date.now(); wxErr = ''; return cb(wxCache); }
+      wxErr = 'open-meteo: ' + e1 + ' | brightsky: ' + (e2 ? e2.message : 'keine Daten'); cb(wxCache);
+    });
+  });
 }
 
 const server = http.createServer((req, res) => {
@@ -32,7 +45,7 @@ const server = http.createServer((req, res) => {
   } else if (url === '/favicon.ico') {
     res.writeHead(204); res.end();
   } else if (url === '/weather') {
-    getWeather(w => { res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'max-age=300' }); res.end(JSON.stringify(w || {})); });
+    getWeather(w => { res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'max-age=300' }); res.end(JSON.stringify(w || { error: wxErr || 'noch keine Daten' })); });
   } else if (url === '/healthz') {
     res.writeHead(200, { 'Content-Type': 'text/plain' }); res.end('ok');
   } else { res.writeHead(404); res.end('Not found'); }
