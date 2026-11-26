@@ -2298,11 +2298,25 @@ const BARS=[];
   gb.mesh(lam({color:0xb9c0c6}));
 })();
 // muscles: arms thicker, shoulders wider, torso broader – exaggerated on purpose
-function applyMuscle(av,lvl){ const u=av.userData; if(!u||u.mu===lvl) return; u.mu=lvl; const a=1+0.3*lvl, t=1+0.12*lvl;
-  if(!u.bic){ const skin=av.children[1].material; u.bic=[]; for(const g of [u.armL,u.armR]){ const sl=g.children[0]; sl.scale.y=0.42; sl.position.y=-0.118; const b=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.34,0.12),skin); b.position.y=-0.39; g.add(b); u.bic.push(b); } }
-  for(const g of [u.armL,u.armR]){ g.children[0].scale.x=g.children[0].scale.z=a*1.05; } for(const b of u.bic){ b.scale.set(a,1+0.05*lvl,a); }
-  const off=0.23*t+0.065*a*1.05+0.02+0.01*lvl; u.armL.position.x=-off; u.armR.position.x=off;
-  const torso=av.children[0]; torso.scale.set(t,1+0.03*lvl,1+0.12*lvl); }
+// V-shaped torso (broad shoulders, narrow waist), round shoulders, biceps bulge, narrower forearms – level 0 = original figure
+function vTorso(lvl){ const g=new THREE.BoxGeometry(0.46,0.6,0.26), p=g.attributes.position; const top=1+0.19*lvl, bot=1+0.01*lvl, dTop=1+0.13*lvl;
+  for(let i=0;i<p.count;i++){ const y=p.getY(i), k=(y+0.3)/0.6; p.setX(i,p.getX(i)*(bot+(top-bot)*k)); p.setZ(i,p.getZ(i)*(1+(dTop-1)*k)); } g.computeVertexNormals(); return g; }
+function applyMuscle(av,lvl){ const u=av.userData; if(!u||u.mu===lvl) return; u.mu=lvl; const torso=av.children[0];
+  if(!u.orig){ u.orig={tg:torso.geometry}; }
+  if(u.mparts){ for(const [g,parts] of u.mparts) for(const m of parts) g.remove(m); u.mparts=null; }
+  for(const g of [u.armL,u.armR]) g.children[0].visible=true;
+  if(!lvl){ torso.geometry=u.orig.tg; u.armL.position.x=-0.3; u.armR.position.x=0.3; return; }
+  torso.geometry=vTorso(lvl); torso.scale.set(1,1,1);
+  const shirt=torso.material, skin=av.children[1].material, a=1+0.22*lvl; u.mparts=[];
+  for(const g of [u.armL,u.armR]){ g.children[0].visible=false; const parts=[];
+    const add=(geo,mat,x,y,z)=>{ const m=new THREE.Mesh(geo,mat); m.position.set(x,y,z); g.add(m); parts.push(m); return m; };
+    add(new THREE.SphereGeometry(0.075*(1+0.16*lvl),12,10),shirt,0,-0.02,0);                       // deltoid (round shoulder)
+    add(new THREE.BoxGeometry(0.13*a,0.13,0.13*a),shirt,0,-0.08,0);                                   // short sleeve
+    add(new THREE.BoxGeometry(0.115*a,0.17,0.115*a),skin,0,-0.22,0);                                  // upper arm
+    add(new THREE.SphereGeometry(0.052*a,12,10),skin,0,-0.21,0.045*a);                                // biceps bulge (front)
+    add(new THREE.BoxGeometry(0.095*(1+0.12*lvl),0.24,0.095*(1+0.12*lvl)),skin,0,-0.43,0);            // forearm, slimmer
+    u.mparts.push([g,parts]); }
+  const off=0.23*(1+0.19*lvl)+0.06*(1+0.16*lvl)*0.55; u.armL.position.x=-off; u.armR.position.x=off; }
 applyMuscle(myAvatar,muLevel(save.pull));
 const PU={bar:null,t:0,lift:0,phase:0,cool:0};
 function pullStart(b){ if(PU.bar) return; PU.bar=b; PU.phase=0; PU.lift=0; PU.cool=0; me.moving=false; toast('💪 Klimmzüge: Leertaste (Handy: Sprung) = hochziehen · E oder Laufen = absteigen',3600); }
