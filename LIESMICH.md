@@ -107,9 +107,11 @@ Bitte die Klasse anweisen, Fantasienamen zu verwenden. Vor dem Einsatz mit Schü
 
 ## Wie im echten Neubau, Handy-Steuerung (26.11.2026)
 
-- Treppenhäuser: große Ziffern 1/2/3 neben und über den Türen zu Treppenraum I/II/III, Stahlwand und Holzhandlauf an jedem Treppenlauf.
+- Treppenhäuser: große Ziffer für das Stockwerk (UG -1, EG 0, OG1 1, OG2 2) neben und über den Treppenhaustüren, Stahlwand und Holzhandlauf an jedem Treppenlauf.
 - Differenzierungszonen: Holzwand mit Sitznischen und Regalfächern (Figuren setzen sich hinein).
-- Aula/Pausenhalle, Schülercafé, Ganztag, Mensa-Ausgabe, Treppenhalle: Terrazzoboden; weiße Akustiklamellen unter der Decke; Fächerwand in der Garderobe.
+- Aula/Pausenhalle, Schülercafé, Ganztag, Mensa-Ausgabe: weiße Akustiklamellen unter der Decke; Fächerwand in der Garderobe.
 - WCs: lange weiße Rinnenwaschbecken mit durchgehendem Spiegel und Händetrockner, weiße Kabinen.
 - Klassenzimmer: Trapeztische, weiße Stühle mit Lehne, Vorhänge an der Fensterseite.
 - Handy: Die Knöpfe „Sprung“ und „Rennen“ sind wieder da (sie waren durch einen Namenskonflikt versteckt). Sprung reagiert sofort beim Antippen; gedrückt halten = immer weiter springen, auch beim Rennen. Im Querformat sitzen die Knöpfe unten rechts neben der Minikarte.
+
+- Aufsicht-Sterne: Bei drei Sternen verfolgt dich eine Aufsicht in gelber Weste (etwas langsamer als Gehen). Erwischt sie dich, bringt sie dich ins Sekretariat; melden im Sekretariat beendet die Verfolgung ebenfalls.

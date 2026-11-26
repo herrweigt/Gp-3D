@@ -1899,8 +1899,25 @@ function immune(){ return TEACH_ON||save.god; }
 function witness(){ let best=null,bd=10; const cand=NP.filter(n=>n.kind==='t'&&!n.hide); for(const k of ['hm','sl','sek','sek2']) if(STAFF[k]) cand.push(STAFF[k]); for(const n of cand){ if(Math.abs(n.y-me.y)>1.6) continue; const d=Math.hypot(n.x-me.x,n.z-me.z); if(d<bd){ bd=d; best=n; } } return best; }
 function wantAdd(why,n){ if(immune()||!me.started) return; if(WANT.s>=3){ WANT.calm=0; return; } WANT.s++; WANT.calm=0; WANT.cd=4; tone([2100,2500,2100,2500],0.07,0.1,0.09);
   if(n&&why==='run') say(n,pickA(WLINES),3200); toast('⭐'.repeat(WANT.s)+' Aufsicht: '+(why==='run'?'Rennen im Schulhaus':why),2400);
-  if(WANT.s>=3){ WANT.call=true; setTimeout(()=>durchsage((save.name||'Gast')+' wird gebeten, sich umgehend im Sekretariat zu melden. Bis dahin: Gehen statt Rennen!'),1800); } wantHud(true); }
+  if(WANT.s>=3){ WANT.call=true; setTimeout(()=>chaseStart(n),2500); setTimeout(()=>durchsage((save.name||'Gast')+' wird gebeten, sich umgehend im Sekretariat zu melden. Bis dahin: Gehen statt Rennen!'),1800); } wantHud(true); }
 function wantDown(why){ if(WANT.s<=0) return; WANT.s--; WANT.calm=0; if(!WANT.s) WANT.call=false; toast((WANT.s?'⭐'.repeat(WANT.s):'Sterne weg')+' · '+(why==='gute Tat'?'Gute Tat – die Aufsicht ist zufrieden.':'Die Aufsicht hat dich aus den Augen verloren.'),2200); wantHud(); }
+// ---- Verfolgung bei drei Sternen: eine Aufsicht (gelbe Weste) läuft dir hinterher. Erwischt sie dich, geht's ins Sekretariat.
+const CH={av:null,pts:null,k:0,re:0,talk:4,name:''};
+function chaseStart(n){ if(CH.av||LIFE.stage<2||immune()) return; let sx=me.x, sz=me.z, sy=me.y; const a=nodeNear(me.x,me.z,me.y,8);
+  if(n&&Math.abs(n.y-me.y)<1.6&&Math.hypot(n.x-me.x,n.z-me.z)<14){ sx=n.x; sz=n.z; sy=n.y; }
+  else for(let t=0;t<30;t++){ const ang=Math.random()*6.28, x=me.x+Math.sin(ang)*9, z=me.z+Math.cos(ang)*9; if(standY(x,z,me.y)!==null){ sx=x; sz=z; break; } }
+  CH.name=pickA(['Frau Berger (Aufsicht)','Herr Huber (Aufsicht)','Frau Klein (Aufsicht)','Herr Wagner (Aufsicht)']);
+  const av=makeAvatar(0xffd400,7); av.children[3].visible=false; av.position.set(sx,sy,sz); setTag(av,CH.name); scene.add(av); CH.av=av; CH.pts=null; CH.re=0; CH.talk=1.5; }
+function chaseEnd(){ if(!CH.av) return; scene.remove(CH.av); CH.av=null; CH.pts=null; }
+function chaseTick(dt){ const av=CH.av; if(!av) return; if(WANT.s<3||immune()){ chaseEnd(); return; }
+  const p=av.position, d=Math.hypot(p.x-me.x,p.z-me.z);
+  if(d<1.15&&Math.abs(p.y-me.y)<1){ chaseCaught(); return; }
+  CH.re-=dt; if(CH.re<=0||!CH.pts){ CH.re=1.0; const a=nodeNear(p.x,p.z,p.y,8), b=nodeNear(me.x,me.z,me.y,8); if(a>=0&&b>=0&&bfs(a,b)){ CH.pts=mkPath(trace(b).reverse(),{x:p.x,y:p.y,z:p.z},{x:me.x,y:me.y,z:me.z}); CH.k=1; } }
+  let moving=false; if(CH.pts){ const P=CH.pts, m=P.length/3; let step=2.35*dt; while(step>0&&CH.k<m){ const tx=P[CH.k*3], ty=P[CH.k*3+1], tz=P[CH.k*3+2], dx=tx-p.x, dz=tz-p.z, L=Math.hypot(dx,dz); if(L<=step){ p.set(tx,ty,tz); step-=L; CH.k++; continue; } p.x+=dx/L*step; p.z+=dz/L*step; p.y+=(ty-p.y)*Math.min(1,step/Math.max(L,0.01)); av.rotation.y=Math.atan2(dx,dz); step=0; moving=true; } }
+  animate(av,moving,dt,false,false);
+  CH.talk-=dt; if(CH.talk<=0&&d<18){ CH.talk=6+Math.random()*3; sayAs(CH.name,pickA(['Stehen bleiben! Ab ins Sekretariat!',''+(save.name||'Du')+'! Ich hab dich gesehen!','Nicht weglaufen – das macht es nur schlimmer!','Im Schulhaus wird gegangen – auch beim Weglaufen!','Ich krieg dich schon …'])); } }
+function chaseCaught(){ chaseEnd(); const S=SEKN; tone([1800,1400,1000],0.12,0.4,0.12);
+  dlg('🚨 Erwischt!',CH.name+' hat dich eingeholt: „So, jetzt kommst du mal mit ins Sekretariat.“',[['Mitgehen',()=>{ closeDlg(); if(S){ me.f=floorOf(S.y); me.y=S.y; me.x=S.x+Math.sin(S.rot||0)*1.6; me.z=S.z+Math.cos(S.rot||0)*1.6; me.vy=0; } wantReport(); },'Du wirst ins Sekretariat gebracht.','Mitgehen']]); }
 function wantReport(){ const S=['„Na, wieder gerannt? Setz dich kurz hin und atme durch. … So, und jetzt bitte im Schritttempo weiter.“','„Ich habe deinen Namen schon dreimal durchgesagt. Wir gehen ab jetzt, ja?“','„Die Aufsicht hat angerufen. Sie meinte, du wärst schneller als der Gong.“','„Weißt du, wie viele Füße in diesem Gang unterwegs sind? Eben. Langsam, bitte.“'];
   MEM.reports++; memSave(); WANT.s=0; WANT.call=false; WANT.calm=0; wantHud(); dlg('Sekretariat',pickA(S)+' – Alles erledigt, die Sterne sind weg.',[]); tone([523,659,784],0.08,0.2,0.1); }
 function wantHud(flash){ const e=$('want'); if(!WANT.s){ e.style.display='none'; return; } e.style.display='block'; e.textContent='⭐'.repeat(WANT.s)+'☆'.repeat(3-WANT.s)+' Aufsicht'+(WANT.s>=3?' · ins Sekretariat!':''); if(flash){ e.classList.remove('fl'); void e.offsetWidth; e.classList.add('fl'); } }
@@ -1918,13 +1935,13 @@ const JH={on:false};
   r.addEventListener('touchstart',e=>{ e.preventDefault(); runToggle=!runToggle; r.textContent=runToggle?'Gehen':'Rennen'; r.classList.toggle('on',runToggle); },{passive:false}); })();
 function plusTick(dt){ if(!PLUS_OK) return; if(JH.on&&me.jy===0) jump(); DEL.f=me.f; DEL.x=me.x; DEL.z=me.z; DEL.y=me.y; const running=(keys.ShiftLeft||keys.ShiftRight||runToggle)&&me.moving&&!modal();
   if(running&&runBlocked()&&performance.now()-runWarn>5000){ runWarn=performance.now(); toast('⭐⭐⭐ Rennen ist gesperrt, bis du dich im Sekretariat meldest.',2200); }
-  naviTick(dt); dsTick(dt); wantTick(dt,running&&!runBlocked()); p2Tick(dt); if(TEAM_OK) teamTick(dt); if(WX_OK) wxTick(dt); }
+  naviTick(dt); dsTick(dt); wantTick(dt,running&&!runBlocked()); chaseTick(dt); p2Tick(dt); if(TEAM_OK) teamTick(dt); if(WX_OK) wxTick(dt); }
 function plusMenu(box){ if(!PLUS_OK) return; const row=(t,d,b,fn)=>{ const r=document.createElement('div'); r.className='m'; const l=document.createElement('div'), x=document.createElement('b'), s=document.createElement('small'); x.textContent=t; s.textContent=d; l.append(x,s); const bt=document.createElement('button'); bt.textContent=b; bt.addEventListener('click',fn); r.append(l,bt); box.append(r); };
   row('👥 Team & Partneraufgaben',hasTeam()?'Team mit '+pName()+' – Lotsen-Mission und Doppelschloss.':'Mit einem anderen Spieler (oder dem Ersatzpartner Max) gemeinsam Aufgaben lösen. Nur vorgegebene Nachrichten, kein Chat.','Öffnen',()=>{ closeMenu(); teamMenu(); });
   row('🌦️ Wetter',(WX_OK?WXK[WX.kind].ic+' ':'')+'Live-Wetter aus Putzbrunn – oder selbst Regen, Schnee, Nebel oder Gewitter wählen.','Ändern',()=>{ closeMenu(); wxChoose(); });
   row('🧭 Navi','Raum oder Klasse wählen – leuchtende Pfeile am Boden führen dich hin (Taste N). In der Rallye ist es aus.','Öffnen',()=>{ closeMenu(); naviOpen(); });
   row('📦 Fundbüro ('+FUND.done+'/'+FUND.total+')','Im Gebäude liegen Fundsachen. Mit Namen: ins Klassenzimmer der Klasse bringen. Ohne Namen: ins Sekretariat. Achte auf die Durchsagen!','Infos',()=>dlg('📦 Fundbüro','Überall im Schulhaus liegen vergessene Sachen: Turnbeutel, Trinkflaschen, ein einzelner Sportschuh … Heb sie mit E auf. Steht ein Name mit Klasse darin, bring sie in das Klassenzimmer dieser Klasse. Ohne Namen gehören sie ins Fundbüro im Sekretariat. Du kannst drei Sachen gleichzeitig tragen. Jede Fundsache bringt 15 Punkte, alle zusammen einen Bonus. Tipp: Die Durchsagen verraten manchmal, wo etwas liegt.',[]));
-  row('⭐ Aufsicht-Sterne','Wer im Schulhaus rennt, während eine Lehrkraft zusieht, bekommt Sterne. Bei drei Sternen wirst du ausgerufen und musst ins Sekretariat. Draußen darfst du rennen.','Infos',()=>dlg('⭐ Aufsicht-Sterne','Im Gebäude wird gegangen. Rennst du in der Nähe einer Lehrkraft, des Hausmeisters oder der Schulleitung, gibt es einen Stern. Müll fallen lassen kostet ebenfalls einen. Sterne verschwinden wieder, wenn du dich eine Weile benimmst, Müll in einen Eimer wirfst oder eine Fundsache zurückbringst. Bei drei Sternen kommt eine Durchsage mit deinem Namen, Rennen ist gesperrt, bis du dich im Sekretariat meldest. Draußen auf dem Pausenhof und den Sportplätzen darfst du rennen.',[])); }
+  row('⭐ Aufsicht-Sterne','Wer im Schulhaus rennt, während eine Lehrkraft zusieht, bekommt Sterne. Bei drei Sternen wirst du ausgerufen und musst ins Sekretariat. Draußen darfst du rennen.','Infos',()=>dlg('⭐ Aufsicht-Sterne','Im Gebäude wird gegangen. Rennst du in der Nähe einer Lehrkraft, des Hausmeisters oder der Schulleitung, gibt es einen Stern. Müll fallen lassen kostet ebenfalls einen. Sterne verschwinden wieder, wenn du dich eine Weile benimmst, Müll in einen Eimer wirfst oder eine Fundsache zurückbringst. Bei drei Sternen kommt eine Durchsage mit deinem Namen, Rennen ist gesperrt und eine Aufsicht in gelber Weste verfolgt dich. Melde dich im Sekretariat – oder lass dich erwischen, dann bringt sie dich hin. Draußen auf dem Pausenhof und den Sportplätzen darfst du rennen.',[])); }
 fundSpawn(); PLUS_OK=true;
 PLUS.NAV=NAV; PLUS.NAVLIST=NAVLIST; PLUS.FUND=FUND; PLUS.WANT=WANT; PLUS.DS=DS; PLUS.naviSet=naviSet; PLUS.naviOff=naviOff; PLUS.wantAdd=wantAdd; PLUS.durchsage=durchsage; PLUS.dsText=dsText; PLUS.fundHere=fundHere; PLUS.wantReport=wantReport;
 
@@ -2170,7 +2187,7 @@ try{ WX.src=localStorage.getItem('gp-wx')||'live'; }catch(e){}
 if(WX.src!=='live'&&WX.src!=='aus'&&WXK[WX.src]) wxSet(WX.src); else wxHud();
 wxFetch(); setInterval(()=>{ if(WX.src==='live') wxFetch(); },600000);
 WX_OK=true;
-PLUS.WX=WX; PLUS.wxSet=wxSet; PLUS.wxFetch=wxFetch; PLUS.wxUrl=wxUrl;
+PLUS.WX=WX; PLUS.CH=CH; PLUS.wxSet=wxSet; PLUS.wxFetch=wxFetch; PLUS.wxUrl=wxUrl;
 
 // ================================================================ update „wie im echten Neubau“ (Fotos vom 26.11.2026)
 // Treppenhaus-Ziffern an den Türen, Stahlwand + Holzhandlauf in den Treppenläufen, Sitznischen in den Differenzierungszonen,
@@ -2206,14 +2223,14 @@ var DECO_OK=false;
   const steelT=tex(256,256,(g,w,h)=>{ g.fillStyle='#9aa1a6'; g.fillRect(0,0,w,h); noise(g,w,h,['#b8bec2','#868d92','#a9b0b4'],900,0.5); g.strokeStyle='#6f767b'; g.lineWidth=3; g.strokeRect(2,2,w-4,h-4); g.fillStyle='#5f666b'; for(let i=0;i<8;i++){ for(const [x,y] of [[10+i*30,10],[10+i*30,h-10],[10,10+i*30],[w-10,10+i*30]]){ g.beginPath(); g.arc(x,y,2.2,0,7); g.fill(); } } });
   const terrT=tex(256,256,(g,w,h)=>{ g.fillStyle='#8d9196'; g.fillRect(0,0,w,h); noise(g,w,h,['#c9c7c0','#5d6166','#a49a8c','#e4e1da','#3f4347'],5200,0.85); },1,1);
   // ---- stairwell numbers on the corridor side of every door into Treppenraum I/II/III
-  const digitT={}; const digit=n=>digitT[n]||(digitT[n]=(()=>{ const cv=document.createElement('canvas'); cv.width=128; cv.height=200; const g=cv.getContext('2d'); g.font='900 190px system-ui,sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.lineWidth=7; g.strokeStyle='#15171a'; g.strokeText(String(n),64,104); const t=new THREE.CanvasTexture(cv); return t; })());
+  const digitT={}; const digit=n=>digitT[n]||(digitT[n]=(()=>{ const cv=document.createElement('canvas'); cv.width=String(n).length>1?220:128; cv.height=200; const g=cv.getContext('2d'); g.font='900 190px system-ui,sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.lineWidth=7; g.strokeStyle='#15171a'; g.strokeText(String(n),cv.width/2,104); const t=new THREE.CanvasTexture(cv); return t; })());
   const roman={'I':1,'II':2,'III':3}; let nDig=0; const DIG=[];
-  WD.floors.forEach((F,fi)=>{ for(const l of F.labels){ const nm=dispOf(l)||''; const m=/Treppenraum (III|II|I)\b/.exec(nm); if(!m) continue; let num=roman[m[1]]; const x=l[1]*C; if(x>105) num=3; else if(x>60) num=2; else if(x<25) num=1;   // the plan stamps TR III as „II“ on some floors
+  WD.floors.forEach((F,fi)=>{ for(const l of F.labels){ const nm=dispOf(l)||''; const m=/Treppenraum (III|II|I)\b/.exec(nm); if(!m) continue; const num=fi===0?'-1':String(fi-1);   // die große Ziffer an der Treppenhaustür = Stockwerk (UG -1, EG 0, OG1 1, OG2 2)
       const A=roomCells(fi,l[1],l[2],12000); if(!A) continue;
       for(const d of F.doors){ const hx=d[0],hy=d[1],cx=d[2],cy=d[3], len=Math.hypot(cx-hx,cy-hy); if(len*C<0.75) continue; const ux=(cx-hx)/len, uy=(cy-hy)/len, nx=-uy, ny=ux, mx=(hx+cx)/2, my=(hy+cy)/2;
         const inA=(s)=>{ const x=Math.round(mx+nx*s), y=Math.round(my+ny*s); return A.cells.has(y*GW+x); }; const a=inA(4)||inA(6), b=inA(-4)||inA(-6); if(a===b) continue;
         const sgn=a?-1:1;   // corridor side
-        const mat=new THREE.MeshBasicMaterial({map:digit(num),transparent:true,depthWrite:false,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2}); const pl=new THREE.Mesh(new THREE.PlaneGeometry(0.62,0.97),mat);
+        const mat=new THREE.MeshBasicMaterial({map:digit(num),transparent:true,depthWrite:false,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2}); const pl=new THREE.Mesh(new THREE.PlaneGeometry(num.length>1?1.07:0.62,0.97),mat);
         const wx=(mx+ux*(len*0.5+3.2)+nx*sgn*1.35)*C, wz=(my+uy*(len*0.5+3.2)+ny*sgn*1.35)*C;   // on the wall right next to the opening
         pl.position.set(wx,LV[fi]+1.3,wz); pl.rotation.y=Math.atan2(nx*sgn,ny*sgn); floorGroups[fi].add(pl); nDig++; DIG.push({f:fi,x:wx,z:wz,nx:nx*sgn,nz:ny*sgn,num});
         const pl2=pl.clone(); pl2.scale.setScalar(0.55); pl2.position.set(mx*C+nx*sgn*0.105,LV[fi]+2.45,my*C+ny*sgn*0.105); floorGroups[fi].add(pl2); } } });
@@ -2258,7 +2275,7 @@ var DECO_OK=false;
         B(nl,u,u+w,0,0.05,0.45,1.75); B(nw,u,u+w,0,0.6,1.75,H); u+=w; k2++; }
       B(nw,u,u+0.14,0,0.6,0,H,1); } });
   nw.mesh(lam({color:0xd2b083})); nl.mesh(lam({color:0xe8cfa2}));
-  if(tP.length){ const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(tP,3)); g.setAttribute('uv',new THREE.Float32BufferAttribute(tU,2)); g.computeVertexNormals(); const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({map:terrT,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-2})); scene.add(m); }
+
   bf.mesh(lam({color:0xf3f3f0})); cub.mesh(lam({color:0xd9bd8c}));
   DECO_OK=true; PLUS.DECO={DIG,nDig,nNis,trap:TRAP?TRAP.length:0,steel:sP.length/18,terr:tP.length/18};
 })();
