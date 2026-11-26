@@ -41,7 +41,7 @@ const server = http.createServer((req, res) => {
 const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 1024 });
 const players = new Map();   // id -> {ws, state, n, t}
 let nextId = 1;
-const TEAMF = { k:[0,999999], lf:[0,1], lc:[0,99], tq:[0,999999], tp:[0,999999], md:[0,1], qm:[0,40], qs:[0,255], px:[-500,500], pz:[-500,500], pf:[0,9], ps:[0,255], tk:[0,9999], tr:[0,2], ts:[0,255], td:[0,255], sw:[0,2] };
+const TEAMF = { k:[0,999999], lf:[0,1], lc:[0,99], tq:[0,999999], tp:[0,999999], md:[0,1], qm:[0,40], qs:[0,255], px:[-500,500], pz:[-500,500], pf:[0,9], ps:[0,255], tk:[0,9999], tr:[0,2], ts:[0,255], td:[0,255], sw:[0,2], mu:[0,5] };
 const num = (v, lo, hi) => (typeof v === 'number' && isFinite(v) ? Math.max(lo, Math.min(hi, v)) : null);
 
 wss.on('connection', ws => {

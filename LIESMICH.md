@@ -115,3 +115,10 @@ Bitte die Klasse anweisen, Fantasienamen zu verwenden. Vor dem Einsatz mit Schü
 - Handy: Die Knöpfe „Sprung“ und „Rennen“ sind wieder da (sie waren durch einen Namenskonflikt versteckt). Sprung reagiert sofort beim Antippen; gedrückt halten = immer weiter springen, auch beim Rennen. Im Querformat sitzen die Knöpfe unten rechts neben der Minikarte.
 
 - Aufsicht-Sterne: Bei drei Sternen verfolgt dich eine Aufsicht in gelber Weste (etwas langsamer als Gehen). Erwischt sie dich, bringt sie dich ins Sekretariat; melden im Sekretariat beendet die Verfolgung ebenfalls.
+
+## Klimmzüge und Muskeln (26.11.2026)
+
+- Klimmzugstangen: 2 im Calisthenics-Bereich, 3 im Fitnessbereich, je 1 in jeder Turnhalle. E = dranhängen, Leertaste (Handy: Sprung, gedrückt halten geht auch) = Klimmzug, E oder Laufen = absteigen.
+- Muskel-Stufen nach 10, 30, 60, 100, 200 Klimmzügen: Arme und Schultern werden comichaft breiter (kurze Ärmel, kräftige Unterarme). Der Sportlehrer kommentiert jede Stufe, je +15 Punkte, Maximum +50.
+- Für alle sichtbar: Übertragen wird nur die Stufe 0–5 (eine Zahl, kein Text). Die neue server.js lässt dieses Feld durch.
+- Gespeichert pro Gerät, kein Muskelabbau.
