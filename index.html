@@ -1530,7 +1530,7 @@ function lifeTick(dtCapped,now){
   const dt=Math.min(1.2,lifeLast?(now-lifeLast)/1000:dtCapped); lifeLast=now;      // figures keep real time even on slow devices
   const T=schoolT();
   if(lastBrk===null) lastBrk=T.brk;
-  if(T.brk!==lastBrk){ lastBrk=T.brk; if(me.started){ gong(); if(T.brk){ toast(T.lunch?'🔔 Gong – Mittagspause! Die Küchen-Ausgabe in der Mensa (E.17) hat jetzt geöffnet.':UMZUG?'🔔 Gong – Pause!':'🔔 Gong – Pause! Der Pausenverkauf hat offen.',3600); ambient(); } else toast('🔔 Gong – die '+T.per+'. Stunde beginnt.'+(myClass?' Die '+myClass.cn+' hat '+subjOf(myClass,T.per)+' in '+myClass.disp+' ('+FN[myClass.f]+').':''),4600); } }
+  if(T.brk!==lastBrk){ lastBrk=T.brk; if(me.started&&!schoolClosed()){ gong(); if(T.brk){ toast(T.lunch?'🔔 Gong – Mittagspause! Die Küchen-Ausgabe in der Mensa (E.17) hat jetzt geöffnet.':UMZUG?'🔔 Gong – Pause!':'🔔 Gong – Pause! Der Pausenverkauf hat offen.',3600); ambient(); } else toast('🔔 Gong – die '+T.per+'. Stunde beginnt.'+(myClass?' Die '+myClass.cn+' hat '+subjOf(myClass,T.per)+' in '+myClass.disp+' ('+FN[myClass.f]+').':''),4600); } }
   for(const n of NP){
     if(n.path&&(n.kind==='p'||n.kind==='t')&&n.c){
       if(n.st===0){ if(!T.brk&&T.t-BRK>n.dl){ n.st=1; n.pose=0; n.mv=1; n.pi=0; } else if(n.wave>0){ n.wave-=dt; n.dirty=1; } else if(Math.random()<dt*0.02){ n.wave=1.2; n.dirty=1; } }
@@ -1548,14 +1548,14 @@ function lifeTick(dtCapped,now){
     else if(s.t==='vball'){ const u=(Math.sin(tt*1.3)+1)/2; s.b.position.set(s.x0+(s.x1-s.x0)*u,1.2+3.2*Math.sin(Math.PI*u)*Math.abs(Math.cos(tt*1.3))+0.3,s.z+Math.sin(tt*0.7)*1.5); }
     else if(s.t==='volley'){ n.x=s.bx+Math.sin(tt*1.1+s.bz)*0.5; n.z=s.bz+Math.cos(tt*0.9+s.bx)*0.6; n.mv=1; n.dirty=1; }
     else if(s.t==='climb'){ n.y=s.base+Math.sin(tt*0.35+s.ph)*s.amp; n.ph+=dt*4; n.dirty=1; } }
-  if(STAFF.koch){ const h=!T.lunch; if(STAFF.koch.hide!==h){ STAFF.koch.hide=h; STAFF.koch.dirty=1; } }
+  if(STAFF.koch&&!schoolClosed()){ const h=!T.lunch; if(STAFF.koch.hide!==h){ STAFF.koch.hide=h; STAFF.koch.dirty=1; } }
   if(!TEACH_ON&&me.moving&&!me.cl&&now-(lifeTick.lk||0)>4000){ const ax=me.x+Math.sin(me.rot)*0.55, az=me.z+Math.cos(me.rot)*0.55, cx=Math.floor(ax/C), cz=Math.floor(az/C); if(cx>=0&&cz>=0&&cx<GW&&cz<GH&&RESTR[me.f]&&RESTR[me.f][cz*GW+cx]){ lifeTick.lk=now; toast('🔒 Dieser Raum ist nur für Lehrkräfte.',2200); } }
   hmTick(dt,now);
   let any=false; for(const n of NP){ if(n.dirty){ npcDraw(n); n.dirty=n.mv?1:0; any=true; if(n.tag) n.tag.position.set(n.x,n.y+(n.pose===1?1.75:2.15),n.z); } }
   if(any) for(const k in crowd) crowd[k].instanceMatrix.needsUpdate=true;
   if(talk){ talk.t-=dt; talk.sp.visible=!!me.third; talk.sp.position.set(talk.n.x,talk.n.y+(talk.n.pose===1?2.0:2.4),talk.n.z); if(talk.t<=0){ $('talk').style.display='none'; scene.remove(talk.sp); talk.sp.material.map.dispose(); talk.sp.material.dispose(); talk=null; } }
   actAcc+=dt; if(actAcc>0.15){ actAcc=0; act=findAct(); const e=$('act'); if(act){ e.textContent=(isTouch?'':'[E] ')+act.label; e.style.display='block'; } else e.style.display='none'; }
-  hudAcc+=dt; if(hudAcc>0.5){ hudAcc=0; const s=Math.ceil(T.left); $('clock').textContent=(T.lunch?'🍽 Mittagspause':T.brk?'🔔 Pause':'📖 '+T.per+'. Stunde')+' · noch '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); hud(); }
+  hudAcc+=dt; if(hudAcc>0.5){ hudAcc=0; const s=Math.ceil(T.left); $('clock').textContent=schoolClosed()?'🌙 Schule geschlossen – Hausmeister-Runde':(T.lunch?'🍽 Mittagspause':T.brk?'🔔 Pause':'📖 '+T.per+'. Stunde')+' · noch '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); hud(); }
 }
 
 $('modeInfo').textContent=UMZUG?'🚧 Umzugs-Update: Der Flügel mit Verwaltung und Oberstufe ist noch Baustelle und abgesperrt. Eingang über Treppenraum II.':'Vollversion: alle Gebäudeteile offen. (Code erneut eingeben, um zum Umzugs-Update zurückzukehren.)';
@@ -1867,7 +1867,7 @@ function dsText(){ const K=pickA(clsNames()), K2=pickA(clsNames()), it=FUND.item
   else L.push('Die Theater-AG probt heute in der Aula. Zuschauer sind willkommen, Popcorn nicht.');
   if(it.length){ const i=pickA(it); L.push('Fundsache: Im Raum „'+i.where+'“ liegt '+i.art+' '+i.n+'. Wer bringt '+pron(i)+' zurück?','Fundsache: Im Raum „'+i.where+'“ liegt '+i.art+' '+i.n+'. Wer bringt '+pron(i)+' zurück?'); }
   let k; do{ k=Math.floor(Math.random()*L.length); } while(k===DS.last&&L.length>1); DS.last=k; return L[k]; }
-function dsTick(dt){ if(!me.started) return; DS.next-=dt; if(DS.next<=0&&!modal()){ DS.next=80+Math.random()*70; durchsage(dsText()); } }
+function dsTick(dt){ if(!me.started||schoolClosed()) return; DS.next-=dt; if(DS.next<=0&&!modal()){ DS.next=80+Math.random()*70; durchsage(dsText()); } }
 
 // ---------------------------------------------------------------- 3) Fundbüro: lost property lies around the building
 const FUND={items:[],carry:[],done:0,total:0};
@@ -1983,7 +1983,7 @@ function qStart(){ const k=qK(); if(!k||k.hide) return; const n0=[]; for(let i=0
   if(cand.length<3) return; Q.on=true; Q.mem=cand; Q.served=0; Q.next=9; Q.ok=0; Q.warned=false; Q.stand=0; cand.forEach((n,i)=>{ n.q={i,back:false}; n.pose=0; }); }
 function qMove(n,tx,tz,rot,dt){ const dx=tx-n.x, dz=tz-n.z, d=Math.hypot(dx,dz); if(d<0.05){ if(n.mv){ n.mv=0; n.rot=rot; n.dirty=1; } return true; } const s=Math.min(d,1.35*dt); n.x+=dx/d*s; n.z+=dz/d*s; n.rot=Math.atan2(dx,dz); n.mv=1; n.dirty=1; return false; }
 function qRelease(n){ n.q.back=true; }
-function qTick(dt){ const T=schoolT(), k=qK();
+function qTick(dt){ const T=schoolT(), k=qK(); if(schoolClosed()&&!Q.on) return;
   if(!Q.on){ Q.retry=(Q.retry||0)-dt; if(T.lunch&&T.t>6&&T.left>90&&k&&!k.hide&&!Q.tried&&Q.retry<=0){ Q.retry=4; qStart(); if(Q.on) Q.tried=true; } if(!T.lunch) Q.tried=false; return; }
   const end=!T.brk||T.left<45;
   for(const n of Q.mem.slice()){ if(!n.q) continue; if(n.st!==0){ setPlace(n,n.brk); n.q=null; continue; }
@@ -2016,7 +2016,7 @@ const SCENES=[
     say(a,P[0]); setTimeout(()=>say(b,P[1]),2800); return true; }},
   {w:1,go(){ const n=nearNPC(n=>n.kind==='t',3,14); if(!n) return false; say(n,pick(['Wo ist denn mein Kaffee … ach, auf dem Kopierer.','Hat jemand einen Board-Marker, der noch schreibt?','So viele neue Räume. Ich hab mich heute auch schon verlaufen.','Bitte langsam auf der Treppe!'])); return true; }},
   {w:1,go(){ const h=STAFF.hm; if(!h||h.hide||Math.abs(h.y-me.y)>1.2||Math.hypot(h.x-me.x,h.z-me.z)>18) return false; say(h,pick(['So, die Tür klemmt nicht mehr.','Wer hat schon wieder den Feuerlöscher als Garderobe benutzt?','Neubau – und trotzdem tropft’s irgendwo. Typisch.','Wenn ich den erwisch, der den Kaugummi unter den Tisch geklebt hat …'])); return true; }} ];
-function sceneTick(dt){ SC.next-=dt; if(SC.next>0||modal()||!me.started) return; SC.next=30+Math.random()*30; const tot=SCENES.reduce((s,x)=>s+x.w,0);
+function sceneTick(dt){ SC.next-=dt; if(SC.next>0||modal()||!me.started||schoolClosed()) return; SC.next=30+Math.random()*30; const tot=SCENES.reduce((s,x)=>s+x.w,0);
   for(let t=0;t<4;t++){ let r=Math.random()*tot, s=SCENES[0]; for(const x of SCENES){ r-=x.w; if(r<=0){ s=x; break; } } if(s.go()) return; } SC.next=8; }
 // lost key: a teacher looks for it, the key lies somewhere nearby on the same floor
 const keyMesh=new THREE.Mesh(new THREE.TorusGeometry(0.06,0.018,6,12),lam({color:0xe8c233})); keyMesh.rotation.x=Math.PI/2; keyMesh.visible=false; scene.add(keyMesh);
@@ -2169,6 +2169,10 @@ var WX_OK=false;
 const SUNT=[[8.0,16.75],[7.5,17.5],[6.7,18.25],[6.7,19.9],[5.85,20.6],[5.25,21.25],[5.5,21.15],[6.15,20.5],[7.0,19.4],[7.75,18.3],[7.35,16.75],[7.9,16.35]];
 const DN={mode:'echt',f:1,t:0}; try{ DN.mode=localStorage.getItem('gp-day')||'echt'; }catch(e){}
 function dayCalc(){ if(DN.mode==='tag') return 1; if(DN.mode==='nacht') return 0; const d=new Date(), h=d.getHours()+d.getMinutes()/60, s=SUNT[d.getMonth()]; const sm=x=>x<=0?0:x>=1?1:x*x*(3-2*x); return Math.min(sm((h-(s[0]-0.6))/1.2),sm(((s[1]+0.6)-h)/1.2)); }
+// nachts ist die Schule zu: keine Schüler, keine Lehrkräfte, kein Gong – nur der Hausmeister
+function schoolClosed(){ return WX_OK&&DN.f<0.25; }
+function schoolNight(on){ for(const n of NP){ if(n===STAFF.hm) continue; if(on){ if(n._nh===undefined) n._nh=!!n.hide; n.hide=true; } else if(n._nh!==undefined){ n.hide=n._nh; n._nh=undefined; } n.dirty=1; }
+  if(me.started) toast(on?'🌙 Es ist Abend – die Schule ist leer. Nur der Hausmeister macht noch seine Runde.':'☀️ Guten Morgen! Die Schule öffnet, gleich geht der Unterricht los.',4200); }
 const lerpC=(a,b,t)=>{ const A=new THREE.Color(a), B=new THREE.Color(b); return A.lerp(B,t); };
 
 const WX={src:'live',live:null,kind:'klar',t:null,code:-1,ok:false,flash:0,next:0,txt:''};
@@ -2177,8 +2181,12 @@ const WXK={klar:{ic:'☀️',sky:0xc5d6e2,fog:[140,420],sun:0.4,hemi:0.9},wolken
 function wmoKind(c,cc){ if(c<0) return 'klar'; if(c>=95) return 'gewitter'; if((c>=71&&c<=77)||c===85||c===86) return 'schnee'; if((c>=51&&c<=67)||(c>=80&&c<=82)) return 'regen'; if(c===45||c===48) return 'nebel'; if(c===3) return 'grau'; if(c===1||c===2) return 'wolken'; return cc>70?'grau':'klar'; }
 function wxUrl(){ const qs=/[?&]server=([^&#]+)/.exec(location.search); let base=qs?decodeURIComponent(qs[1]):(/github\.io$/.test(location.hostname)?GP_SERVER:''); if(base) return base.replace(/^ws/,'http').replace(/\/ws$/,'')+'/weather';
   if((location.protocol==='http:'||location.protocol==='https:')&&!/claude|anthropic/.test(location.hostname)) return location.pathname.replace(/[^/]*$/,'')+'weather'; return null; }
-async function wxFetch(){ const u=wxUrl(); if(!u){ WX.ok=false; wxHud(); return; } try{ const ctl=new AbortController(); const tm=setTimeout(()=>ctl.abort(),75000); const r=await fetch(u,{signal:ctl.signal,cache:'no-store'}); clearTimeout(tm); const d=await r.json();
-    if(typeof d.code==='number'){ WX.live=d; WX.ok=true; if(WX.src==='live') wxSet(wmoKind(d.code,d.cloud||0)); } }catch(e){ WX.ok=false; } WX.tried=true; wxHud(); }
+// Ersatz, wenn Live-Wetter nicht erreichbar ist: zufälliges, zur Jahreszeit passendes Wetter (wechselt alle ~20 min)
+const WXSEAS=[['klar',2],['wolken',3],['grau',3],['nebel',1],['regen',2],['schnee',2],['gewitter',0]], WXSUM=[['klar',5],['wolken',3],['grau',1],['nebel',0],['regen',2],['schnee',0],['gewitter',1]];
+function wxRandom(){ const m=new Date().getMonth(), L=(m>=4&&m<=8)?WXSUM:WXSEAS.map(([k,w])=>[k,k==='schnee'&&(m>=3&&m<=9)?0:w]); const tot=L.reduce((s,x)=>s+x[1],0); let r=Math.random()*tot; for(const [k,w] of L){ r-=w; if(r<=0) return k; } return 'wolken'; }
+function wxFallback(){ if(WX.src!=='live') return; if(!WX.rnd||performance.now()-WX.rndT>1200000){ WX.rnd=wxRandom(); WX.rndT=performance.now(); } wxSet(WX.rnd); }
+async function wxFetch(){ const u=wxUrl(); if(!u){ WX.ok=false; WX.tried=true; wxFallback(); wxHud(); return; } try{ const ctl=new AbortController(); const tm=setTimeout(()=>ctl.abort(),75000); const r=await fetch(u,{signal:ctl.signal,cache:'no-store'}); clearTimeout(tm); const d=await r.json();
+    if(typeof d.code==='number'){ WX.live=d; WX.ok=true; if(WX.src==='live') wxSet(wmoKind(d.code,d.cloud||0)); } }catch(e){ WX.ok=false; } WX.tried=true; if(!WX.ok) wxFallback(); wxHud(); }
 // precipitation particles around the camera (drops only outside the building)
 const WN=1800, wxPos=new Float32Array(WN*3), wxVel=new Float32Array(WN); const wxGeo=new THREE.BufferGeometry(); wxGeo.setAttribute('position',new THREE.BufferAttribute(wxPos,3));
 const wxDot=(()=>{ const c=document.createElement('canvas'); c.width=c.height=32; const g=c.getContext('2d'); const gr=g.createRadialGradient(16,16,0,16,16,16); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(0.6,'rgba(255,255,255,.8)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,32,32); return new THREE.CanvasTexture(c); })();
@@ -2189,16 +2197,16 @@ function wxApply(){ const k=WXK[WX.kind], f=DN.f=dayCalc(); const c=lerpC(0x0a14
   M.glass.emissive.setHex(f<0.5?0x7a6232:0x000000); M.glass.emissiveIntensity=1-f; M.glass.opacity=0.3+0.35*(1-f); }
 function wxSet(kind){ WX.kind=kind; const k=WXK[kind]; wxApply();
   const p=kind==='regen'||kind==='gewitter', s=kind==='schnee'; wxLines.visible=p; wxPts.visible=s; if(p||s) for(let i=0;i<WN;i++) wxDrop(i,false); wxHud(); }
-function wxHud(){ const e=$('wx'); if(!e) return; const k=WXK[WX.kind]; let t=k.ic+' '; if(WX.src==='live'&&WX.ok&&WX.live) t+=Math.round(WX.live.temp)+' °C · Putzbrunn live'; else if(WX.src==='live') t+=(!wxUrl()?'Wetter: kein Live-Zugang':WX.tried?'Live-Wetter gerade nicht erreichbar':'Wetter lädt …'); else if(WX.src==='aus') t='🌤️ Wetter aus'; else t+=WX.kind[0].toUpperCase()+WX.kind.slice(1)+' (gewählt)'; e.textContent=t; }
+function wxHud(){ const e=$('wx'); if(!e) return; const k=WXK[WX.kind]; let t=k.ic+' '; if(WX.src==='live'&&WX.ok&&WX.live) t+=Math.round(WX.live.temp)+' °C · Putzbrunn live'; else if(WX.src==='live') t+=(WX.tried?WX.kind[0].toUpperCase()+WX.kind.slice(1)+' (Zufall – Live nicht erreichbar)':'Wetter lädt …'); else if(WX.src==='aus') t='🌤️ Wetter aus'; else t+=WX.kind[0].toUpperCase()+WX.kind.slice(1)+' (gewählt)'; e.textContent=t; }
 let hemiL=null; scene.traverse(o=>{ if(o.isHemisphereLight) hemiL=o; });
 function wxTick(dt){ if(!WX_OK) return; const k=WX.kind;
   if(wxLines.visible){ const cy=camera.position.y; for(let i=0;i<WN;i++){ let y=wxPos[i*3+1]-dt*22*wxVel[i]; if(y<cy-7||Math.abs(wxPos[i*3]-camera.position.x)>17||Math.abs(wxPos[i*3+2]-camera.position.z)>17){ wxDrop(i,true); y=wxPos[i*3+1]; } wxPos[i*3+1]=y; const j=i*6; wxLP[j]=wxLP[j+3]=wxPos[i*3]; wxLP[j+2]=wxLP[j+5]=wxPos[i*3+2]; wxLP[j+1]=y; wxLP[j+4]=y+0.7; } wxLines.geometry.attributes.position.needsUpdate=true; }
   if(wxPts.visible){ const cy=camera.position.y, tt=performance.now()/1000; for(let i=0;i<WN;i++){ let y=wxPos[i*3+1]-dt*1.6*wxVel[i]; wxPos[i*3]+=Math.sin(tt*0.9+i)*dt*0.35; if(y<cy-7||Math.abs(wxPos[i*3]-camera.position.x)>17||Math.abs(wxPos[i*3+2]-camera.position.z)>17){ wxDrop(i,true); y=wxPos[i*3+1]; } wxPos[i*3+1]=y; } wxGeo.attributes.position.needsUpdate=true; wxMat.color.setHex(0xffffff); wxMat.size=0.16; }
-  DN.t-=dt; if(DN.t<=0){ DN.t=20; const f0=DN.f; wxApply(); }
+  DN.t-=dt; if(DN.t<=0){ DN.t=20; wxApply(); const cl=schoolClosed(); if(cl!==!!DN.closed){ DN.closed=cl; schoolNight(cl); } }
   if(hemiL){ let h=WX.hemi||0.9; if(DN.f<0.6&&me.started&&isInside(me.f,me.x,me.z)) h=Math.max(h,0.82*(1-DN.f)+h*DN.f); if(k==='gewitter'){ WX.next-=dt; if(WX.next<=0){ WX.next=8+Math.random()*18; WX.flash=0.25; setTimeout(()=>tone([55,48,42],0.5,1.4,0.18),900+Math.random()*1500); } if(WX.flash>0){ WX.flash-=dt; h+=2.2*Math.max(0,WX.flash)/0.25; } } hemiL.intensity=h; } }
 function wxChoose(){ const o=[['live','🛰️ Live (echtes Wetter in Putzbrunn)'],['klar','☀️ Sonne'],['wolken','⛅ Wolken'],['regen','🌧️ Regen'],['schnee','🌨️ Schnee'],['nebel','🌫️ Nebel'],['gewitter','⛈️ Gewitter'],['aus','🚫 Aus (schont schwache Geräte)']];
   const dm=[['echt','🕒 Tageszeit: echt (nach Uhrzeit)'],['tag','🌞 Tageszeit: immer Tag'],['nacht','🌙 Tageszeit: immer Nacht']].map(([v,l])=>[l,()=>{ closeDlg(); DN.mode=v; try{ localStorage.setItem('gp-day',v); }catch(e){} wxApply(); },'',DN.mode===v?'✓ aktiv':'Wählen']);
-  dlg('🌦️ Wetter & Tageszeit','Live zeigt das aktuelle Wetter in Putzbrunn (alle 10 Minuten aktualisiert). Du kannst auch selbst ein Wetter wählen – das gilt nur für dich. Die Tageszeit folgt normalerweise der echten Uhr: abends wird es dunkel, im Gebäude geht das Licht an.',dm.concat(o.map(([v,l])=>[l,()=>{ closeDlg(); WX.src=v; try{ localStorage.setItem('gp-wx',v); }catch(e){} if(v==='live'){ if(WX.ok&&WX.live) wxSet(wmoKind(WX.live.code,WX.live.cloud||0)); else { wxSet('klar'); wxFetch(); } } else if(v==='aus') wxSet('klar'); else wxSet(v); wxHud(); },'',WX.src===v?'✓ aktiv':'Wählen']))); }
+  dlg('🌦️ Wetter & Tageszeit','Live zeigt das aktuelle Wetter in Putzbrunn (alle 10 Minuten aktualisiert). Du kannst auch selbst ein Wetter wählen – das gilt nur für dich. Die Tageszeit folgt normalerweise der echten Uhr: abends wird es dunkel, im Gebäude geht das Licht an.',dm.concat(o.map(([v,l])=>[l,()=>{ closeDlg(); WX.src=v; try{ localStorage.setItem('gp-wx',v); }catch(e){} if(v==='live'){ if(WX.ok&&WX.live) wxSet(wmoKind(WX.live.code,WX.live.cloud||0)); else { wxFallback(); wxFetch(); } } else if(v==='aus') wxSet('klar'); else wxSet(v); wxHud(); },'',WX.src===v?'✓ aktiv':'Wählen']))); }
 try{ WX.src=localStorage.getItem('gp-wx')||'live'; }catch(e){}
 if(WX.src!=='live'&&WX.src!=='aus'&&WXK[WX.src]) wxSet(WX.src); else wxHud();
 wxFetch(); setInterval(()=>{ if(WX.src==='live') wxFetch(); },600000);
