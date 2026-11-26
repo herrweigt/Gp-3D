@@ -122,3 +122,10 @@ Bitte die Klasse anweisen, Fantasienamen zu verwenden. Vor dem Einsatz mit Schü
 - Muskel-Stufen nach 10, 30, 60, 100, 200 Klimmzügen: Arme und Schultern werden comichaft breiter (kurze Ärmel, kräftige Unterarme). Der Sportlehrer kommentiert jede Stufe, je +15 Punkte, Maximum +50.
 - Für alle sichtbar: Übertragen wird nur die Stufe 0–5 (eine Zahl, kein Text). Die neue server.js lässt dieses Feld durch.
 - Gespeichert pro Gerät, kein Muskelabbau.
+
+## Tag/Nacht, Ruf, Feueralarm-Übung, Adventskalender (26.11.2026)
+
+- Tag und Nacht nach echter Uhrzeit (Sonnenauf- und -untergang in München je Monat). Nachts: dunkler Himmel, leuchtende Fenster, im Gebäude geht das Licht an, der Hausmeister macht seine Runde mit Taschenlampe. Menü → Wetter & Tageszeit: echt / immer Tag / immer Nacht.
+- Ruf bei Hausmeister, Sekretariat, Lehrkräften, Sportlehrer, Küche (−3 … +3, pro Gerät): steigt durch Müll aufheben, Fundsachen, Schlüssel, Anstellen, Klimmzüge; sinkt durch Rennen, Müll fallen lassen, Vordrängeln. Wirkt auf Gespräche (bei gutem Ruf Geheimtipps) und darauf, wie genau die Aufsicht hinschaut. Menü → „Dein Ruf“.
+- Feueralarm-Übung (Menü): Start in einem Klassenzimmer im OG, Sirene, rote Warnung, Durchsage; grüne Notausgang-Schilder an allen Treppenhaustüren; Navi aus; Rennen gibt +5 s Strafzeit; Ziel ist der Sammelplatz (derzeit Rasenspielfeld – in more.js bei SAMMEL änderbar). Danach Zeit, Sterne und ein Quiz mit 3 von 6 Fragen zum Verhalten bei Feueralarm.
+- Adventskalender: vom 1. bis 24. Dezember jeden Tag ein Geschenk im Schulhaus, Rätselhinweis im Menü, verpasste Türchen nachholbar; an Tag 12 schneit es, an Tag 24 gibt es eine Weihnachtsmütze, die alle sehen. Vorschau zum Testen: Adresse mit ?advent=5 (oder eine andere Zahl) öffnen.
