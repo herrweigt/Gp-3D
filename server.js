@@ -11,6 +11,19 @@ const PORT = process.env.PORT || 3000;
 const MAX_PLAYERS = 60;
 const html = fs.readFileSync(path.join(__dirname, 'index.html'));
 
+// Live-Wetter für Putzbrunn (Open-Meteo, ohne Schlüssel). Alle 10 Minuten neu, für alle Spieler gemeinsam –
+// die Geräte der Schüler fragen nur diesen Server, nicht den Wetterdienst.
+const https = require('https');
+let wxCache = null, wxTime = 0;
+function getWeather(cb) {
+  if (process.env.WX_MOCK) return cb(JSON.parse(process.env.WX_MOCK));
+  if (wxCache && Date.now() - wxTime < 600000) return cb(wxCache);
+  https.get('https://api.open-meteo.com/v1/forecast?latitude=48.0753&longitude=11.7181&current=temperature_2m,weather_code,cloud_cover,wind_speed_10m,is_day&timezone=Europe%2FBerlin', r => {
+    let b = ''; r.on('data', d => b += d);
+    r.on('end', () => { try { const c = JSON.parse(b).current; wxCache = { temp: c.temperature_2m, code: c.weather_code, cloud: c.cloud_cover, wind: c.wind_speed_10m, day: c.is_day, time: c.time }; wxTime = Date.now(); } catch (e) {} cb(wxCache); });
+  }).on('error', () => cb(wxCache)).setTimeout(8000, function () { this.destroy(); });
+}
+
 const server = http.createServer((req, res) => {
   const url = req.url.split('?')[0];
   if (url === '/' || url === '/index.html') {
@@ -18,6 +31,8 @@ const server = http.createServer((req, res) => {
     res.end(html);
   } else if (url === '/favicon.ico') {
     res.writeHead(204); res.end();
+  } else if (url === '/weather') {
+    getWeather(w => { res.writeHead(w ? 200 : 503, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'max-age=300' }); res.end(JSON.stringify(w || {})); });
   } else if (url === '/healthz') {
     res.writeHead(200, { 'Content-Type': 'text/plain' }); res.end('ok');
   } else { res.writeHead(404); res.end('Not found'); }

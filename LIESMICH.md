@@ -96,3 +96,11 @@ Bitte die Klasse anweisen, Fantasienamen zu verwenden. Vor dem Einsatz mit Schü
 - Lotsen-Mission: Einer sieht das Ziel (orange auf der Karte), der andere läuft „blind“ ohne Karte und Navi und wird per Funk und Markierungen hingeführt. +30. Max kann Lotse sein.
 - Doppelschloss: Zwei grüne Schalterplatten in zwei Stockwerken, jeder bekommt nur einen Rätselhinweis zu seinem Schalter. Nur gleichzeitig darauf stehen öffnet das Schloss. +40.
 - Wichtig: Die Team-Funktionen brauchen die neue server.js (bei Render automatisch nach dem Push).
+
+## Live-Wetter und Möbel (26.11.2026)
+
+- Live-Wetter aus Putzbrunn: Der Spielserver holt alle 10 Minuten das aktuelle Wetter bei Open-Meteo (ohne Schlüssel) und gibt es unter /weather an alle Spieler weiter. Die Geräte der Schüler fragen nur den eigenen Server, nicht den Wetterdienst.
+- Darstellung: Sonne, Wolken, grau, Nebel, Regen, Schnee, Gewitter (Blitze und Donner). Regen und Schnee fallen nur draußen, sind aber durch die Fenster zu sehen.
+- Menü → „Wetter“: Live oder selbst wählen, außerdem „Aus“ für schwache Geräte. Die Wahl gilt nur für das eigene Gerät.
+- Ohne Spielserver (z. B. auf der Claude-Seite) gibt es kein Live-Wetter, nur das selbst gewählte.
+- Möbel wie im Neubau: helle Tische mit schwarzen Beinen, weiße Stühle.

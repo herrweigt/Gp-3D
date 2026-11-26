@@ -56,6 +56,7 @@
   #bigmap .bar.nav select{max-width:300px;padding:6px;border-radius:8px}
   #bigmap .bar.nav small{color:var(--mut)}
   #bm{cursor:crosshair}
+  #wx{font-size:12px;color:var(--mut);margin-bottom:3px}
   #teamInfo,#tping{display:none;font-size:12px;font-weight:700;color:#7cfc8a;margin-bottom:3px}
   #tping{color:#ff9f1c}
   #tbtns{display:none;gap:6px;margin:4px 0}
@@ -99,6 +100,7 @@
 </div>
 
 <div id="players" class="panel">
+  <div id="wx"></div>
   <div id="want"></div>
   <div id="teamInfo"></div>
   <div id="tping"></div>
@@ -332,7 +334,7 @@ const M={
   glass: new THREE.MeshLambertMaterial({color:0x9cc7dd,transparent:true,opacity:0.3,depthWrite:false}),
   steel: lam({color:0x2b2d30}), bronze: lam({color:0x6e5b3c}), step: lam({color:0xb9b6ae}), door: lam({color:0xd9b98a}), white: lam({color:0xf2f0ea})
 };
-const FM={fglas:0xa9c7d6,folive:0x8f8f52,fcer:0x3b3f45,fw:0xf1efea,fgrey:0x9a9da1,fdark:0x2e3136,fwood:0xd2a86a,fply:0xc9a777,fgreen:0x2f5d50,fblue:0x2f6fd0,fred:0xd0442f,fyel:0xe9b824,forange:0xe8742c,
+const FM={fdesk:0xe4e4df,fchair:0xe9e3d7,fglas:0xa9c7d6,folive:0x8f8f52,fcer:0x3b3f45,fw:0xf1efea,fgrey:0x9a9da1,fdark:0x2e3136,fwood:0xd2a86a,fply:0xc9a777,fgreen:0x2f5d50,fblue:0x2f6fd0,fred:0xd0442f,fyel:0xe9b824,forange:0xe8742c,
   metal:0x8d9399,sand:0xe2cf9c,net:0xfafafa,car0:0xb23a32,car1:0x2d5d9c,car2:0xd9dadc,car3:0x3a3f45,car4:0x7c8f6a,black:0x18191b,hold0:0xe63946,hold1:0xf4a261,hold2:0x2a9d8f,hold3:0x457b9d,hold4:0xe9c46a,hold5:0x8e5bd9};
 
 // geometry builder with world-space UVs so that textures keep their real size
@@ -554,9 +556,9 @@ function frame(f,r,s){   // room-local coordinates: u = distance from the front 
     fbox(mat,q[0],base+h0,q[1],q[2],base+h1,q[3]); if(col) mark(f,q[0],q[1],q[2],q[3]); return true; };
   return {D,Wd,put,raw,top:CE[f],f,r,s,pt:(u,v)=>{ const q=W2(u,v,u,v); return [q[0],q[1]]; },du:s===0?[0,1]:s===2?[0,-1]:s===3?[1,0]:[-1,0],dv:(s===0||s===2)?[1,0]:[0,1]};
 }
-function desk(F,u,v,w,mat,d){ d=d||0.6; if(!F.put(mat,u,v,u+d,v+w,0.70,0.74,1)) return false; F.raw('fgrey',u+0.05,v+0.02,u+d-0.05,v+0.05,0,0.7); F.raw('fgrey',u+0.05,v+w-0.05,u+d-0.05,v+w-0.02,0,0.7); return true; }
+function desk(F,u,v,w,mat,d){ d=d||0.6; if(!F.put(mat,u,v,u+d,v+w,0.70,0.74,1)) return false; F.raw('fdark',u+0.05,v+0.02,u+d-0.05,v+0.05,0,0.7); F.raw('fdark',u+0.05,v+w-0.05,u+d-0.05,v+w-0.02,0,0.7); return true; }
 function seat(F,u,v,dir,h){ const p=F.pt(u,v), a=dir===1?F.du:dir===2?[-F.dv[0],-F.dv[1]]:dir===3?F.dv:[-F.du[0],-F.du[1]]; SEATS.push({f:F.f,r:F.r,x:p[0],z:p[1],rot:Math.atan2(a[0],a[1]),h}); }
-function chair(F,u,v,dir){ if(!F.put('fdark',u,v,u+0.4,v+0.4,0.42,0.46,0)) return; seat(F,u+0.2,v+0.2,dir||0,0.46); F.raw('metal',u+0.15,v+0.15,u+0.25,v+0.25,0,0.42);
+function chair(F,u,v,dir){ if(!F.put('fchair',u,v,u+0.4,v+0.4,0.42,0.46,0)) return; seat(F,u+0.2,v+0.2,dir||0,0.46); F.raw('metal',u+0.15,v+0.15,u+0.25,v+0.25,0,0.42);
   if(dir===1) F.raw('fdark',u,v,u+0.04,v+0.4,0.46,0.85); else if(dir===2) F.raw('fdark',u,v+0.36,u+0.4,v+0.4,0.46,0.85); else if(dir===3) F.raw('fdark',u,v,u+0.4,v+0.04,0.46,0.85); else F.raw('fdark',u+0.36,v,u+0.4,v+0.4,0.46,0.85); }
 function stool(F,u,v,dir){ if(F.put('fdark',u,v,u+0.34,v+0.34,0.5,0.55,0)){ F.raw('metal',u+0.13,v+0.13,u+0.21,v+0.21,0,0.5); seat(F,u+0.17,v+0.17,dir||0,0.55); } }
 function board(F){ // white boards across the whole front wall, interrupted only where a door is
@@ -569,7 +571,7 @@ const GEN={
   klasse(F,o){ o=o||{}; const c=F.Wd/2; board(F,o.fach);
     if(o.fach){ if(F.put('fw',1.5,c-1.3,2.25,c+1.3,0,0.86,1)) F.raw('fgrey',1.48,c-1.32,2.27,c+1.32,0.86,0.9); } else desk(F,1.5,c-0.8,1.6,'fwood',0.7);
     const n=Math.max(1,Math.min(4,Math.floor((F.Wd-1.2)/2.2))), pitch=(F.Wd-1.0)/n;
-    for(let u=3.4;u+1.3<F.D-1.1;u+=1.55) for(let k=0;k<n;k++){ const v=0.5+k*pitch+(pitch-1.3)/2; if(desk(F,u,v,1.3,o.fach?'fw':'fwood')){ chair(F,u+0.72,v+0.12,0); chair(F,u+0.72,v+0.78,0); } }
+    for(let u=3.4;u+1.3<F.D-1.1;u+=1.55) for(let k=0;k<n;k++){ const v=0.5+k*pitch+(pitch-1.3)/2; if(desk(F,u,v,1.3,o.fach?'fw':'fdesk')){ chair(F,u+0.72,v+0.12,0); chair(F,u+0.72,v+0.78,0); } }
     const h=o.fach?2.7:2.0; if(!F.put('fw',F.D-0.6,0.3,F.D-0.02,F.Wd-0.3,0,h,1)){ F.put('fw',F.D-0.6,0.3,F.D-0.02,c-1.2,0,h,1); F.put('fw',F.D-0.6,c+1.2,F.D-0.02,F.Wd-0.3,0,h,1); }
     if(o.fach) media(F); },
   labor(F){ board(F,true); GEN.abzug(F,0.4); const n=Math.max(1,Math.min(3,Math.floor((F.Wd-1.4)/2.7))), pitch=(F.Wd-1.0)/n;
@@ -1849,9 +1851,10 @@ function dsText(){ const K=pickA(clsNames()), K2=pickA(clsNames()), it=FUND.item
   'Eine Lehrkraft sucht ihren Kaffeebecher. Zuletzt gesehen: irgendwo im 1. OG.',
   'Heute ist kein Hitzefrei. Auch nicht, wenn ihr ganz fest daran glaubt.',
   'Liebe Schülerinnen und Schüler: Der Gong ist keine Empfehlung.',
-  'Gute Nachricht: Anders als bei manch anderem Release wurde bei uns nichts verschoben. Der Unterricht beginnt pünktlich.',
+  'Auch wir haben unseren Release verschoben – wie die Großen. Bis dahin: Early Access!',
   'Die Klasse '+K+' trifft sich nach der Pause bitte vollständig in ihrem Klassenzimmer.',
   'Fundsachen bitte im Sekretariat abgeben – oder gleich ins richtige Klassenzimmer bringen.' ];
+  if(WX_OK){ const w=WX.kind; if(w==='regen') L.push('Bei Regen bitte die Schuhe gut abtreten – der Hausmeister hat gerade frisch gewischt.','Regenschirme bitte nicht im Klassenzimmer aufspannen. Auch nicht zum Trocknen.'); if(w==='schnee') L.push('Schneeballschlachten nur auf dem Pausenhof. Und bitte nicht auf den Hausmeister.','Es schneit! Bitte trotzdem nicht rodeln – auch nicht die Treppe runter.'); if(w==='gewitter') L.push('Wegen Gewitter bleibt der Sportplatz gesperrt. Bitte im Gebäude bleiben.'); if(w==='nebel') L.push('Wer im Nebel den Eingang nicht findet: N drücken – das Navi kennt den Weg.'); if(w==='klar') L.push('Die Sonne scheint! Die Pause findet heute draußen statt.'); }
   if(UMZUG) L.push('Information der Schulleitung: Der Neubau ist fertig. Fast. Bitte nicht an der Baustelle klingeln.','Die Erste Hilfe befindet sich derzeit im Sekretariat E.47.','Das Lehrerzimmer befindet sich vorläufig in den Räumen 1.27 und 1.28.');
   else L.push('Die Theater-AG probt heute in der Aula. Zuschauer sind willkommen, Popcorn nicht.');
   if(it.length){ const i=pickA(it); L.push('Fundsache: Im Raum „'+i.where+'“ liegt '+i.art+' '+i.n+'. Wer bringt '+pron(i)+' zurück?','Fundsache: Im Raum „'+i.where+'“ liegt '+i.art+' '+i.n+'. Wer bringt '+pron(i)+' zurück?'); }
@@ -1908,9 +1911,10 @@ let runWarn=0;
 // ---------------------------------------------------------------- per frame
 function plusTick(dt){ if(!PLUS_OK) return; DEL.f=me.f; DEL.x=me.x; DEL.z=me.z; DEL.y=me.y; const running=(keys.ShiftLeft||keys.ShiftRight||runToggle)&&me.moving&&!modal();
   if(running&&runBlocked()&&performance.now()-runWarn>5000){ runWarn=performance.now(); toast('⭐⭐⭐ Rennen ist gesperrt, bis du dich im Sekretariat meldest.',2200); }
-  naviTick(dt); dsTick(dt); wantTick(dt,running&&!runBlocked()); p2Tick(dt); if(TEAM_OK) teamTick(dt); }
+  naviTick(dt); dsTick(dt); wantTick(dt,running&&!runBlocked()); p2Tick(dt); if(TEAM_OK) teamTick(dt); if(WX_OK) wxTick(dt); }
 function plusMenu(box){ if(!PLUS_OK) return; const row=(t,d,b,fn)=>{ const r=document.createElement('div'); r.className='m'; const l=document.createElement('div'), x=document.createElement('b'), s=document.createElement('small'); x.textContent=t; s.textContent=d; l.append(x,s); const bt=document.createElement('button'); bt.textContent=b; bt.addEventListener('click',fn); r.append(l,bt); box.append(r); };
   row('👥 Team & Partneraufgaben',hasTeam()?'Team mit '+pName()+' – Lotsen-Mission und Doppelschloss.':'Mit einem anderen Spieler (oder dem Ersatzpartner Max) gemeinsam Aufgaben lösen. Nur vorgegebene Nachrichten, kein Chat.','Öffnen',()=>{ closeMenu(); teamMenu(); });
+  row('🌦️ Wetter',(WX_OK?WXK[WX.kind].ic+' ':'')+'Live-Wetter aus Putzbrunn – oder selbst Regen, Schnee, Nebel oder Gewitter wählen.','Ändern',()=>{ closeMenu(); wxChoose(); });
   row('🧭 Navi','Raum oder Klasse wählen – leuchtende Pfeile am Boden führen dich hin (Taste N). In der Rallye ist es aus.','Öffnen',()=>{ closeMenu(); naviOpen(); });
   row('📦 Fundbüro ('+FUND.done+'/'+FUND.total+')','Im Gebäude liegen Fundsachen. Mit Namen: ins Klassenzimmer der Klasse bringen. Ohne Namen: ins Sekretariat. Achte auf die Durchsagen!','Infos',()=>dlg('📦 Fundbüro','Überall im Schulhaus liegen vergessene Sachen: Turnbeutel, Trinkflaschen, ein einzelner Sportschuh … Heb sie mit E auf. Steht ein Name mit Klasse darin, bring sie in das Klassenzimmer dieser Klasse. Ohne Namen gehören sie ins Fundbüro im Sekretariat. Du kannst drei Sachen gleichzeitig tragen. Jede Fundsache bringt 15 Punkte, alle zusammen einen Bonus. Tipp: Die Durchsagen verraten manchmal, wo etwas liegt.',[]));
   row('⭐ Aufsicht-Sterne','Wer im Schulhaus rennt, während eine Lehrkraft zusieht, bekommt Sterne. Bei drei Sternen wirst du ausgerufen und musst ins Sekretariat. Draußen darfst du rennen.','Infos',()=>dlg('⭐ Aufsicht-Sterne','Im Gebäude wird gegangen. Rennst du in der Nähe einer Lehrkraft, des Hausmeisters oder der Schulleitung, gibt es einen Stern. Müll fallen lassen kostet ebenfalls einen. Sterne verschwinden wieder, wenn du dich eine Weile benimmst, Müll in einen Eimer wirfst oder eine Fundsache zurückbringst. Bei drei Sternen kommt eine Durchsage mit deinem Namen, Rennen ist gesperrt, bis du dich im Sekretariat meldest. Draußen auf dem Pausenhof und den Sportplätzen darfst du rennen.',[])); }
@@ -2128,6 +2132,38 @@ function invPeer(){ let b=null, bd=2.8; for(const [id,s] of peerT()){ if(Math.ab
 EGGACT.push(INV);
 TEAM_OK=true;
 PLUS.TEAM=TEAM; PLUS.TROOMS=TROOMS; PLUS.qSend=qSend; PLUS.pingDo=pingDo; PLUS.taskStart=taskStart; PLUS.teamSet=teamSet; PLUS.teamMenu=teamMenu; PLUS.botOffer=botOffer; PLUS.teamSearch=teamSearch;
+
+// ================================================================ update „Live-Wetter“ (Putzbrunn, über den eigenen Spielserver von Open-Meteo)
+var WX_OK=false;
+const WX={src:'live',live:null,kind:'klar',t:null,code:-1,ok:false,flash:0,next:0,txt:''};
+const WXK={klar:{ic:'☀️',sky:0xc5d6e2,fog:[140,420],sun:0.4,hemi:0.9},wolken:{ic:'⛅',sky:0xbcc6ce,fog:[120,380],sun:0.25,hemi:0.85},grau:{ic:'☁️',sky:0xa9b2b9,fog:[90,320],sun:0.12,hemi:0.8},nebel:{ic:'🌫️',sky:0xc4c9cc,fog:[2,32],sun:0.05,hemi:0.8},
+  regen:{ic:'🌧️',sky:0x9aa4ac,fog:[60,260],sun:0.08,hemi:0.75},schnee:{ic:'🌨️',sky:0xd3d9de,fog:[40,200],sun:0.1,hemi:0.9},gewitter:{ic:'⛈️',sky:0x7d868e,fog:[50,220],sun:0.05,hemi:0.65}};
+function wmoKind(c,cc){ if(c<0) return 'klar'; if(c>=95) return 'gewitter'; if((c>=71&&c<=77)||c===85||c===86) return 'schnee'; if((c>=51&&c<=67)||(c>=80&&c<=82)) return 'regen'; if(c===45||c===48) return 'nebel'; if(c===3) return 'grau'; if(c===1||c===2) return 'wolken'; return cc>70?'grau':'klar'; }
+function wxUrl(){ const qs=/[?&]server=([^&#]+)/.exec(location.search); let base=qs?decodeURIComponent(qs[1]):(/github\.io$/.test(location.hostname)?GP_SERVER:''); if(base) return base.replace(/^ws/,'http').replace(/\/ws$/,'')+'/weather';
+  if((location.protocol==='http:'||location.protocol==='https:')&&!/claude|anthropic/.test(location.hostname)) return location.pathname.replace(/[^/]*$/,'')+'weather'; return null; }
+async function wxFetch(){ const u=wxUrl(); if(!u){ WX.ok=false; wxHud(); return; } try{ const ctl=new AbortController(); const tm=setTimeout(()=>ctl.abort(),75000); const r=await fetch(u,{signal:ctl.signal,cache:'no-store'}); clearTimeout(tm); const d=await r.json();
+    if(typeof d.code==='number'){ WX.live=d; WX.ok=true; if(WX.src==='live') wxSet(wmoKind(d.code,d.cloud||0)); } }catch(e){ WX.ok=false; } WX.tried=true; wxHud(); }
+// precipitation particles around the camera (drops only outside the building)
+const WN=1800, wxPos=new Float32Array(WN*3), wxVel=new Float32Array(WN); const wxGeo=new THREE.BufferGeometry(); wxGeo.setAttribute('position',new THREE.BufferAttribute(wxPos,3));
+const wxDot=(()=>{ const c=document.createElement('canvas'); c.width=c.height=32; const g=c.getContext('2d'); const gr=g.createRadialGradient(16,16,0,16,16,16); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(0.6,'rgba(255,255,255,.8)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,32,32); return new THREE.CanvasTexture(c); })();
+const wxMat=new THREE.PointsMaterial({color:0xffffff,size:0.16,map:wxDot,transparent:true,opacity:0.9,depthWrite:false}); const wxPts=new THREE.Points(wxGeo,wxMat); wxPts.frustumCulled=false; wxPts.visible=false; scene.add(wxPts);
+const wxLines=new THREE.LineSegments(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0x6d8093,transparent:true,opacity:0.7})); const wxLP=new Float32Array(WN*6); wxLines.geometry.setAttribute('position',new THREE.BufferAttribute(wxLP,3)); wxLines.frustumCulled=false; wxLines.visible=false; scene.add(wxLines);
+function wxDrop(i,top){ let x,z,k=0; do{ x=camera.position.x+(Math.random()-0.5)*32; z=camera.position.z+(Math.random()-0.5)*32; k++; } while(k<6&&isInside(G,x,z)); if(isInside(G,x,z)){ x=1e4; } wxPos[i*3]=x; wxPos[i*3+2]=z; wxPos[i*3+1]=top?camera.position.y+6+Math.random()*6:camera.position.y-4+Math.random()*16; wxVel[i]=0.6+Math.random()*0.8; }
+function wxSet(kind){ WX.kind=kind; const k=WXK[kind]; scene.background.setHex(k.sky); scene.fog.color.setHex(k.sky); scene.fog.near=k.fog[0]; scene.fog.far=k.fog[1]; sun.intensity=k.sun; WX.hemi=k.hemi;
+  const p=kind==='regen'||kind==='gewitter', s=kind==='schnee'; wxLines.visible=p; wxPts.visible=s; if(p||s) for(let i=0;i<WN;i++) wxDrop(i,false); wxHud(); }
+function wxHud(){ const e=$('wx'); if(!e) return; const k=WXK[WX.kind]; let t=k.ic+' '; if(WX.src==='live'&&WX.ok&&WX.live) t+=Math.round(WX.live.temp)+' °C · Putzbrunn live'; else if(WX.src==='live') t+=(!wxUrl()?'Wetter: kein Live-Zugang':WX.tried?'Live-Wetter gerade nicht erreichbar':'Wetter lädt …'); else if(WX.src==='aus') t='🌤️ Wetter aus'; else t+=WX.kind[0].toUpperCase()+WX.kind.slice(1)+' (gewählt)'; e.textContent=t; }
+let hemiL=null; scene.traverse(o=>{ if(o.isHemisphereLight) hemiL=o; });
+function wxTick(dt){ if(!WX_OK) return; const k=WX.kind;
+  if(wxLines.visible){ const cy=camera.position.y; for(let i=0;i<WN;i++){ let y=wxPos[i*3+1]-dt*22*wxVel[i]; if(y<cy-7||Math.abs(wxPos[i*3]-camera.position.x)>17||Math.abs(wxPos[i*3+2]-camera.position.z)>17){ wxDrop(i,true); y=wxPos[i*3+1]; } wxPos[i*3+1]=y; const j=i*6; wxLP[j]=wxLP[j+3]=wxPos[i*3]; wxLP[j+2]=wxLP[j+5]=wxPos[i*3+2]; wxLP[j+1]=y; wxLP[j+4]=y+0.7; } wxLines.geometry.attributes.position.needsUpdate=true; }
+  if(wxPts.visible){ const cy=camera.position.y, tt=performance.now()/1000; for(let i=0;i<WN;i++){ let y=wxPos[i*3+1]-dt*1.6*wxVel[i]; wxPos[i*3]+=Math.sin(tt*0.9+i)*dt*0.35; if(y<cy-7||Math.abs(wxPos[i*3]-camera.position.x)>17||Math.abs(wxPos[i*3+2]-camera.position.z)>17){ wxDrop(i,true); y=wxPos[i*3+1]; } wxPos[i*3+1]=y; } wxGeo.attributes.position.needsUpdate=true; wxMat.color.setHex(0xffffff); wxMat.size=0.16; }
+  if(hemiL){ let h=WX.hemi||0.9; if(k==='gewitter'){ WX.next-=dt; if(WX.next<=0){ WX.next=8+Math.random()*18; WX.flash=0.25; setTimeout(()=>tone([55,48,42],0.5,1.4,0.18),900+Math.random()*1500); } if(WX.flash>0){ WX.flash-=dt; h+=2.2*Math.max(0,WX.flash)/0.25; } } hemiL.intensity=h; } }
+function wxChoose(){ const o=[['live','🛰️ Live (echtes Wetter in Putzbrunn)'],['klar','☀️ Sonne'],['wolken','⛅ Wolken'],['regen','🌧️ Regen'],['schnee','🌨️ Schnee'],['nebel','🌫️ Nebel'],['gewitter','⛈️ Gewitter'],['aus','🚫 Aus (schont schwache Geräte)']];
+  dlg('🌦️ Wetter','Live zeigt das aktuelle Wetter in Putzbrunn (alle 10 Minuten aktualisiert). Du kannst auch selbst ein Wetter wählen – das gilt nur für dich.',o.map(([v,l])=>[l,()=>{ closeDlg(); WX.src=v; try{ localStorage.setItem('gp-wx',v); }catch(e){} if(v==='live'){ if(WX.ok&&WX.live) wxSet(wmoKind(WX.live.code,WX.live.cloud||0)); else { wxSet('klar'); wxFetch(); } } else if(v==='aus') wxSet('klar'); else wxSet(v); wxHud(); },'',WX.src===v?'✓ aktiv':'Wählen'])); }
+try{ WX.src=localStorage.getItem('gp-wx')||'live'; }catch(e){}
+if(WX.src!=='live'&&WX.src!=='aus'&&WXK[WX.src]) wxSet(WX.src); else wxHud();
+wxFetch(); setInterval(()=>{ if(WX.src==='live') wxFetch(); },600000);
+WX_OK=true;
+PLUS.WX=WX; PLUS.wxSet=wxSet; PLUS.wxFetch=wxFetch; PLUS.wxUrl=wxUrl;
 
 // ================================================================ main loop
 let last=performance.now(), sendAcc=0, uiAcc=0, lastF=-1;
