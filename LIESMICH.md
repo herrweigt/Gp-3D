@@ -138,3 +138,6 @@ Bitte die Klasse anweisen, Fantasienamen zu verwenden. Vor dem Einsatz mit Schü
 - Taste X (Handy: 🛴-Knopf) zum Auf- und Absteigen. Draußen knapp dreimal so schnell wie Gehen, im Gebäude wird geschoben (normales Tempo).
 - In der Rallye und bei der Feueralarm-Übung nicht nutzbar; der 100-m-Sprint-Rekord zählt nicht auf dem Scooter.
 - Für alle sichtbar (eine Zahl 0/1 über den Server).
+
+## Update: Rätselketten (Nov. 2026)
+Drei geheime, dreistufige Rätselketten ohne Zettel – Hinweise stecken in der Spielwelt. Belohnungen: E-Scooter (X), Taschenlampe (L), Sprungschuhe (J). Fortschritt im „📓 Rätselbuch“ (Menü). Sprungschuhe sind im Mehrspieler für alle sichtbar. Der Code ESCOOTER bleibt als Lehrkraft-Abkürzung.
