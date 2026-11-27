@@ -56,6 +56,8 @@
   #bigmap .bar.nav select{max-width:300px;padding:6px;border-radius:8px}
   #bigmap .bar.nav small{color:var(--mut)}
   #bm{cursor:crosshair}
+  #btnScoot{touch-action:none;font-size:18px}
+  #btnScoot.on{background:var(--acc);color:var(--ink)}
   #fireFx{position:fixed;inset:0;pointer-events:none;display:none;z-index:5;box-shadow:inset 0 0 120px 40px rgba(230,30,30,.85)}
   #fireT{font-weight:800;color:#ff6b6b;font-size:13px}
   #dP{white-space:pre-line}
@@ -157,6 +159,7 @@
     <b>B</b><span>Tasche: essen, Bücher, Müll</span>
     <b>Treppen</b><span>einfach hinauf- oder hinunterlaufen</span>
     <b>K</b><span>Übersichtskarte mit Raumnamen</span>
+    <b>X</b><span>E-Scooter auf-/absteigen (wenn freigeschaltet)</span>
     <b>T / Q</b><span>Im Team: Funk (vorgegebene Nachrichten) / Markierung setzen</span>
     <b>N</b><span>Navi: Raum oder Klasse wählen, Pfeile am Boden führen hin</span>
     <b>M</b><span>Missionen</span>
@@ -1433,6 +1436,7 @@ const FULLCODE='NEUBAUKOMPLETT', TEACHCODE='LEHRKRAFT';
 TEACH_ON=!!save.teacher;
 function cheat(v){ const cv=String(v||'').replace(/[^A-Za-z0-9]/g,'').toUpperCase(); if(cv===FULLCODE){ try{ if(UMZUG) localStorage.setItem('gp-mode','voll'); else localStorage.removeItem('gp-mode'); location.reload(); }catch(e){ toast('Der Wechsel braucht den Speicher des Browsers – hier nicht verfügbar.',3600); } return true; }
   if(cv===TEACHCODE){ save.teacher=save.teacher?0:1; TEACH_ON=!!save.teacher; persist(); hud(); closeDlg(); toast(TEACH_ON?'👩‍🏫 Lehrkraft-Modus an: Technik-, Lager- und Reinigungsräume sind offen.':'Lehrkraft-Modus aus.',3600); return true; }
+  if(cv==='ESCOOTER'||cv==='ROLLER'||cv==='SCOOTER'){ scootCode(); closeDlg(); return true; }
   if(cv!==GODCODE) return false; save.god=save.god?0:1; if(save.god){ save.energy=100; save.ausweis=1; } persist(); hud(); closeDlg(); toast(save.god?'✨ Gottmodus an: Geld, Energie, Tasche und Ausleihe ohne Grenze.':'Gottmodus aus.',3200); return true; }
 function library(){ if(!save.ausweis&&!save.god&&!UMZUG){ dlg('Bibliothek','„Ohne Schülerausweis kann ich dir leider nichts ausleihen. Den bekommst du im Sekretariat im 1. Obergeschoss.“',[['Zum Sekretariat führen',()=>{ closeDlg(); guideTo(2,'Sekretariat'); },'','Los']]); return; }
   const opts=[]; for(const b of save.books) opts.push(['↩️ '+BOOKS[b]+' zurückgeben',()=>{ save.books=save.books.filter(x=>x!==b); if(save.read.includes(b)&&!save.back.includes(b)){ save.back.push(b); save.score+=5; toast('Danke! Gelesen und zurückgebracht: +5',1800); } persist(); hud(); refreshStats(); library(); },save.read.includes(b)?'gelesen':'noch nicht gelesen','Abgeben']);
@@ -1778,7 +1782,7 @@ function eggTick(dt){ eggT+=dt; const T=schoolT(), h=hourNow();
   const run=(keys.ShiftLeft||keys.ShiftRight||runToggle)&&me.moving;
   if(eggPrevJy===0&&me.jy>0){ if(run&&eggT-BOOST.lastLand<0.25) BOOST.v=Math.min(2.1,BOOST.v+0.22); else if(run) BOOST.v=Math.max(BOOST.v,1.08); if(BOOST.v>=2.0) egg('hop'); }
   if(eggPrevJy>0&&me.jy===0) BOOST.lastLand=eggT; if(me.jy===0&&eggT-BOOST.lastLand>0.45) BOOST.v=1; if(!run) BOOST.v=Math.max(1,BOOST.v-dt*2); eggPrevJy=me.jy;
-  if(me.f===G&&me.z>-6.3&&me.z<0.7){ if(BOOST.prevX<118.6&&me.x>=118.6) BOOST.t0=eggT; if(BOOST.t0!==null&&BOOST.prevX<218&&me.x>=218){ const s=eggT-BOOST.t0; BOOST.t0=null; toast('⏱ 100 m in '+s.toFixed(2)+' s',2600); if(s<11){ sayAs('Sportlehrer','Das war jetzt aber nicht ganz sauber. Trotzdem: Respekt.'); egg('sprint'); } } } else BOOST.t0=null; BOOST.prevX=me.x;
+  if(me.f===G&&me.z>-6.3&&me.z<0.7&&!scootOn()){ if(BOOST.prevX<118.6&&me.x>=118.6) BOOST.t0=eggT; if(BOOST.t0!==null&&BOOST.prevX<218&&me.x>=218){ const s=eggT-BOOST.t0; BOOST.t0=null; toast('⏱ 100 m in '+s.toFixed(2)+' s',2600); if(s<11){ sayAs('Sportlehrer','Das war jetzt aber nicht ganz sauber. Trotzdem: Respekt.'); egg('sprint'); } } } else BOOST.t0=null; BOOST.prevX=me.x;
   // golden broom, rainbow
   if(save.binTot>=50) egg('besen'); if(save.eggs.includes('besen')&&!myAvatar.userData.broom){ const b=new THREE.Group(); eBox(b,EM(0x8a5a2b),0.04,1.1,0.04,0,-0.3,0.12); eBox(b,EM(0xf5c518,{emissive:0x553300}),0.3,0.28,0.12,0,-0.9,0.12); myAvatar.userData.armR.add(b); myAvatar.userData.broom=b; }
   if(save.rainbow) myAvatar.userData.shirt.color.setHSL((eggT*0.25)%1,0.8,0.55);
@@ -1940,7 +1944,7 @@ const JH={on:false};
   r.addEventListener('touchstart',e=>{ e.preventDefault(); runToggle=!runToggle; r.textContent=runToggle?'Gehen':'Rennen'; r.classList.toggle('on',runToggle); },{passive:false}); })();
 function plusTick(dt){ if(!PLUS_OK) return; if(JH.on&&me.jy===0) jump(); DEL.f=me.f; DEL.x=me.x; DEL.z=me.z; DEL.y=me.y; const running=(keys.ShiftLeft||keys.ShiftRight||runToggle)&&me.moving&&!modal();
   if(running&&runBlocked()&&performance.now()-runWarn>5000){ runWarn=performance.now(); toast('⭐⭐⭐ Rennen ist gesperrt, bis du dich im Sekretariat meldest.',2200); }
-  naviTick(dt); dsTick(dt); wantTick(dt,running&&!runBlocked()); chaseTick(dt); p2Tick(dt); if(TEAM_OK) teamTick(dt); if(WX_OK) wxTick(dt); if(PULL_OK){ if(JH.on&&PU.bar) pullJump(); pullTick(dt); pullPeers(); } if(MORE_OK) moreTick(dt); }
+  naviTick(dt); dsTick(dt); wantTick(dt,running&&!runBlocked()); chaseTick(dt); p2Tick(dt); if(TEAM_OK) teamTick(dt); if(WX_OK) wxTick(dt); if(PULL_OK){ if(JH.on&&PU.bar) pullJump(); pullTick(dt); pullPeers(); } if(MORE_OK) moreTick(dt); if(SCOOT_OK){ scootTick(dt); scootPeers(); } }
 function plusMenu(box){ if(!PLUS_OK) return; const row=(t,d,b,fn)=>{ const r=document.createElement('div'); r.className='m'; const l=document.createElement('div'), x=document.createElement('b'), s=document.createElement('small'); x.textContent=t; s.textContent=d; l.append(x,s); const bt=document.createElement('button'); bt.textContent=b; bt.addEventListener('click',fn); r.append(l,bt); box.append(r); };
   row('👥 Team & Partneraufgaben',hasTeam()?'Team mit '+pName()+' – Lotsen-Mission und Doppelschloss.':'Mit einem anderen Spieler (oder dem Ersatzpartner Max) gemeinsam Aufgaben lösen. Nur vorgegebene Nachrichten, kein Chat.','Öffnen',()=>{ closeMenu(); teamMenu(); });
   if(MORE_OK) moreMenu(row);
@@ -2037,8 +2041,8 @@ var TEAM_OK=false;
 const QMSG=['','📍 Hier!','🙋 Komm zu mir!','⬅️ Links','➡️ Rechts','⬆️ Geradeaus','🔼 Treppe hoch','🔽 Treppe runter','✋ Stopp!','↩️ Falsch – zurück!','👍 Ja','👎 Nein','⏳ Warte kurz','🟢 Ich steh am Schalter!','🎉 Geschafft!','🙏 Danke!','🤷 Ich find’s nicht'];
 const TEAM={k:1+Math.floor(Math.random()*999998),lf:0,lc:0,tq:0,tp:0,qm:0,qs:0,px:0,pz:0,pf:0,ps:0,tk:0,tr:0,ts:0,td:0,sw:0,
   pk:0,pn:'',bot:null,since:0,gone:0,lfT:0,ign:{},asked:{},seen:{qs:-1,ps:-1,ts:-1,td:-1},task:null,pings:[]};
-function teamState(){ if(!TEAM_OK) return {}; const T=TEAM; return {k:T.k,lf:T.lf,lc:T.lc,tq:T.tq,tp:T.tp,md:UMZUG?1:0,qm:T.qm,qs:T.qs,px:Math.round(T.px*10)/10,pz:Math.round(T.pz*10)/10,pf:T.pf,ps:T.ps,tk:T.tk,tr:T.tr,ts:T.ts,td:T.td,sw:T.sw,mu:muLevel(save.pull||0),xm:(save.advent&&save.advent.o&&save.advent.o.indexOf(24)>=0)?1:0}; }
-function teamClean(s){ const o={}, R={k:[0,999999],lf:[0,1],lc:[0,99],tq:[0,999999],tp:[0,999999],md:[0,1],qm:[0,40],qs:[0,255],px:[-500,500],pz:[-500,500],pf:[0,9],ps:[0,255],tk:[0,9999],tr:[0,2],ts:[0,255],td:[0,255],sw:[0,2],mu:[0,5],xm:[0,1]};
+function teamState(){ if(!TEAM_OK) return {}; const T=TEAM; return {k:T.k,lf:T.lf,lc:T.lc,tq:T.tq,tp:T.tp,md:UMZUG?1:0,qm:T.qm,qs:T.qs,px:Math.round(T.px*10)/10,pz:Math.round(T.pz*10)/10,pf:T.pf,ps:T.ps,tk:T.tk,tr:T.tr,ts:T.ts,td:T.td,sw:T.sw,mu:muLevel(save.pull||0),xm:(save.advent&&save.advent.o&&save.advent.o.indexOf(24)>=0)?1:0,sc:scootOn()?1:0}; }
+function teamClean(s){ const o={}, R={k:[0,999999],lf:[0,1],lc:[0,99],tq:[0,999999],tp:[0,999999],md:[0,1],qm:[0,40],qs:[0,255],px:[-500,500],pz:[-500,500],pf:[0,9],ps:[0,255],tk:[0,9999],tr:[0,2],ts:[0,255],td:[0,255],sw:[0,2],mu:[0,5],xm:[0,1],sc:[0,1]};
   for(const k in R){ const v=s[k]; o[k]=(typeof v==='number'&&isFinite(v))?Math.max(R[k][0],Math.min(R[k][1],(k==='px'||k==='pz')?v:Math.round(v))):0; } return o; }
 const peerT=()=>{ const L=[]; for(const [id,s] of Net.peers) if(s.T&&s.T.k) L.push([id,s]); return L; };
 function partner(){ if(TEAM.bot) return null; if(!TEAM.pk) return null; for(const [id,s] of Net.peers) if(s.T&&s.T.k===TEAM.pk) return [id,s]; return null; }
@@ -2457,6 +2461,39 @@ function moreMenu(row){ row('🚨 Feueralarm-Übung',FIRE.on?'Läuft gerade …'
 MORE_OK=true;
 PLUS.REP=MEM.rep; PLUS.repAdd=repAdd; PLUS.FIRE=FIRE; PLUS.fireStart=fireStart; PLUS.fireEnd=fireEnd; PLUS.ADV=ADV; PLUS.advOpen=advOpen; PLUS.SAMMEL=SAMMEL; PLUS.hatApply=hatApply;
 
+// ================================================================ update „E-Scooter“ (Cheatcode ESCOOTER oder ROLLER): schnell über das Gelände düsen
+// Nur draußen schnell – im Gebäude wird geschoben (Hausordnung). In Rallye und Feueralarm-Übung aus. Für alle sichtbar.
+var SCOOT_OK=false;
+const SCOOT={on:false,warnIn:0,lastIn:false};
+function scootModel(){ const g=new THREE.Group(), dark=lam({color:0x1d232b}), acc=lam({color:0x19c37d}), grey=lam({color:0x9aa3ab});
+  const deck=new THREE.Mesh(new THREE.BoxGeometry(0.17,0.05,0.9),dark); deck.position.y=0.1; g.add(deck);
+  const strip=new THREE.Mesh(new THREE.BoxGeometry(0.175,0.012,0.6),acc); strip.position.set(0,0.13,-0.05); g.add(strip);
+  for(const z of [-0.42,0.42]){ const w=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.1,0.06,16),dark); w.rotation.z=Math.PI/2; w.position.set(0,0.1,z); g.add(w); const hub=new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.045,0.07,10),grey); hub.rotation.z=Math.PI/2; hub.position.set(0,0.1,z); g.add(hub); }
+  const stem=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.025,1.0,10),grey); stem.position.set(0,0.6,0.44); stem.rotation.x=-0.12; g.add(stem);
+  const bar=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,0.5,10),dark); bar.rotation.z=Math.PI/2; bar.position.set(0,1.08,0.5); g.add(bar);
+  const lamp=new THREE.Mesh(new THREE.BoxGeometry(0.07,0.04,0.03),new THREE.MeshBasicMaterial({color:0xfff6c8})); lamp.position.set(0,0.98,0.52); g.add(lamp);
+  return g; }
+function scootAttach(av,on){ const u=av.userData; if(!u) return; if(on&&!u.scoot){ u.scoot=scootModel(); av.add(u.scoot); } if(u.scoot) u.scoot.visible=!!on; }
+function scootOn(){ return SCOOT_OK&&SCOOT.on; }
+function scootBlocked(){ const R=cur&&cur.rallye; if(R) return 'Während der Rallye bleibt der Scooter in der Garage.'; if(MORE_OK&&FIRE.on) return 'Bei Feueralarm wird gegangen – kein Scooter!'; if(PULL_OK&&PU.bar) return 'Erst von der Stange absteigen.'; return ''; }
+function scootCode(){ save.scooter=save.scooter?0:1; persist(); if(!save.scooter){ scootSet(false); toast('🛴 E-Scooter zurückgegeben.',2000); } else toast('🛴 E-Scooter freigeschaltet! Taste X (Handy: 🛴) zum Auf- und Absteigen. Draußen bist du richtig schnell, im Gebäude wird geschoben.',4800); scootBtn(); }
+function scootSet(on){ if(on){ const b=scootBlocked(); if(b){ toast(b,2600); return; } } SCOOT.on=!!on; scootAttach(myAvatar,SCOOT.on); scootBtn(); if(on) tone([392,523,659],0.07,0.25,0.08); }
+function scootToggle(){ if(!save.scooter) return; scootSet(!SCOOT.on); }
+// speed factor for the movement code: fast outside, pushing inside
+function scootMul(){ if(!scootOn()) return 1; if(isInside(me.f,me.x,me.z)||me.f!==G) return 1; return 2.9; }
+function scootBtn(){ let b=$('btnScoot'); if(!b){ b=document.createElement('button'); b.id='btnScoot'; b.textContent='🛴'; b.addEventListener('touchstart',e=>{ e.preventDefault(); scootToggle(); },{passive:false}); b.addEventListener('click',scootToggle); $('tbtns').append(b); }
+  b.style.display=save.scooter?'':'none'; b.classList.toggle('on',SCOOT.on); }
+function scootTick(dt){ if(!SCOOT.on) return; const b=scootBlocked(); if(b){ scootSet(false); toast(b,2600); return; }
+  const inside=isInside(me.f,me.x,me.z)||me.f!==G; if(inside&&!SCOOT.lastIn&&performance.now()-SCOOT.warnIn>15000){ SCOOT.warnIn=performance.now(); toast('🛴 Im Schulhaus wird der Scooter geschoben.',2200); } SCOOT.lastIn=inside;
+  // pose: standing on the deck, hands on the handlebar (after the normal animation)
+  if(!inside){ myAvatar.position.y+=0.12; const u=myAvatar.userData; u.armL.rotation.x=u.armR.rotation.x=-1.05; u.armL.rotation.z=0.18; u.armR.rotation.z=-0.18; u.legL.rotation.x=0.18; u.legR.rotation.x=-0.12; if(u.scoot) u.scoot.position.y=-0.12; }
+  else if(myAvatar.userData.scoot) myAvatar.userData.scoot.position.y=0; }
+function scootPeers(){ for(const [id,s] of Net.peers){ const av=peerAv.get(id); if(av&&s.T) scootAttach(av,!!s.T.sc); } }
+window.addEventListener('keydown',e=>{ if(!SCOOT_OK||!me.started||typing()) return; if(e.code==='KeyX'&&save.scooter) scootToggle(); });
+scootBtn();
+SCOOT_OK=true;
+PLUS.SCOOT=SCOOT; PLUS.scootSet=scootSet; PLUS.scootMul=scootMul; PLUS.scootCode=scootCode;
+
 // ================================================================ main loop
 let last=performance.now(), sendAcc=0, uiAcc=0, lastF=-1;
 function step(dt){
@@ -2470,7 +2507,7 @@ function step(dt){
   if(me.started){ const e0=save.energy; save.energy=(save.god||cur&&cur.rallye)?100:Math.max(0,Math.min(100,save.energy+dt*(run&&me.moving?-0.3:0.12))); if(e0>3&&save.energy<=3) toast('Du bist erschöpft. Iss etwas – B öffnet die Tasche.',3200); }
   if(me.cl) climbStep(dt,modal()?0:Math.max(-1,Math.min(1,f)),modal()?0:Math.max(-1,Math.min(1,s)));
   else if(me.moving){
-    const sp=(run?5.2*BOOST.v:2.5)*Math.min(1,mag), sn=Math.sin(me.yaw), cs=Math.cos(me.yaw);
+    const sp=(scootMul()>1?2.5*scootMul():(run?5.2*BOOST.v:2.5))*Math.min(1,mag), sn=Math.sin(me.yaw), cs=Math.cos(me.yaw);
     const dx=(sn*f - cs*s)/mag, dz=(cs*f + sn*s)/mag; me.rot=Math.atan2(dx,dz); moveBy(dx,dz,sp*dt);
   }
   me.f=floorOf(me.y);

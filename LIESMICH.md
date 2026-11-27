@@ -131,3 +131,10 @@ Bitte die Klasse anweisen, Fantasienamen zu verwenden. Vor dem Einsatz mit Schü
 - Adventskalender: vom 1. bis 24. Dezember jeden Tag ein Geschenk im Schulhaus, Rätselhinweis im Menü, verpasste Türchen nachholbar; an Tag 12 schneit es, an Tag 24 gibt es eine Weihnachtsmütze, die alle sehen. Vorschau zum Testen: Adresse mit ?advent=5 (oder eine andere Zahl) öffnen.
 - Nachts ist die Schule zu: keine Schüler, keine Lehrkräfte, kein Gong, keine Durchsagen – nur der Hausmeister mit Taschenlampe. Morgens öffnet sie wieder.
 - Ist das Live-Wetter nicht erreichbar, gibt es zufälliges, zur Jahreszeit passendes Wetter (wechselt etwa alle 20 Minuten).
+
+## E-Scooter (27.11.2026)
+
+- Code ESCOOTER (oder ROLLER) am Start oder im Menü eingeben → E-Scooter freigeschaltet; erneut eingeben gibt ihn zurück.
+- Taste X (Handy: 🛴-Knopf) zum Auf- und Absteigen. Draußen knapp dreimal so schnell wie Gehen, im Gebäude wird geschoben (normales Tempo).
+- In der Rallye und bei der Feueralarm-Übung nicht nutzbar; der 100-m-Sprint-Rekord zählt nicht auf dem Scooter.
+- Für alle sichtbar (eine Zahl 0/1 über den Server).
